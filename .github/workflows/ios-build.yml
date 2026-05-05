@@ -39,10 +39,29 @@ jobs:
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
-          # Write key directly (already in PEM format, NOT base64)
-          printf '%s\n' "$ASC_KEY_P8" > ios/AuthKey.p8
-          chmod 600 ios/AuthKey.p8
-          echo "Key file created, size: $(wc -c < ios/AuthKey.p8) bytes"
+          set -e
+          KEY_FILE="ios/AuthKey.p8"
+          mkdir -p ios
+          
+          # Detect if the secret is base64-encoded and decode if necessary
+          if echo "$ASC_KEY_P8" | base64 -d 2>/dev/null | grep -q 'BEGIN PRIVATE KEY'; then
+            echo "Detected base64-encoded key — decoding..."
+            echo "$ASC_KEY_P8" | base64 -d > "$KEY_FILE"
+          else
+            echo "Writing raw PEM key..."
+            printf '%s\n' "$ASC_KEY_P8" > "$KEY_FILE"
+          fi
+          
+          chmod 600 "$KEY_FILE"
+          
+          # Validate PEM format
+          if head -1 "$KEY_FILE" | grep -q 'BEGIN PRIVATE KEY'; then
+            echo "✅ Key file is valid PEM, size: $(wc -c < "$KEY_FILE") bytes"
+          else
+            echo "❌ Key file does not look like PEM:"
+            head -3 "$KEY_FILE"
+            exit 1
+          fi
       
       - name: Build and Upload to TestFlight
         env:

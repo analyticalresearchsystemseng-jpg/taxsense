@@ -35,32 +35,16 @@ jobs:
       - name: Install Fastlane
         run: gem install fastlane
       
-      - name: Setup API Key
-        env:
-          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-        run: |
-          echo "$ASC_KEY_P8" | base64 -d > ios/AuthKey.p8
-          chmod 600 ios/AuthKey.p8
-          echo "Key file created:"
-          ls -la ios/AuthKey.p8
-          echo "Key ID: ${{ secrets.ASC_KEY_ID }}"
-          echo "Team ID: ${{ secrets.ASC_TEAM_ID }}"
-      
       - name: Build and Upload to TestFlight
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
           cd ios
           echo "=== Directory contents ==="
           ls -la
-          echo "=== Fastlane version ==="
-          fastlane --version
           echo "=== Running fastlane build ==="
-          fastlane build || {
-            echo "=== FASTLANE FAILED ==="
-            echo "Check logs above for error"
-            exit 1
-          }
+          fastlane build

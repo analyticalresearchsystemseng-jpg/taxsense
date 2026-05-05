@@ -1640,7 +1640,7 @@ function App() {
             letterSpacing: '-0.5px',
             fontWeight: 800
           }}>
-            TaxSense <span style={{ fontSize: '0.8rem', letterSpacing: 'normal', fontWeight: 'normal', opacity: 0.6, WebkitTextFillColor: 'initial', color: 'var(--text-main)', verticalAlign: 'middle', marginLeft: '0.2rem' }}>v1.2.2 (Build 76)</span>
+            TaxSense <span style={{ fontSize: '0.8rem', letterSpacing: 'normal', fontWeight: 'normal', opacity: 0.6, WebkitTextFillColor: 'initial', color: 'var(--text-main)', verticalAlign: 'middle', marginLeft: '0.2rem' }}>v1.3.0 (Build 78)</span>
             {isPremium && <span style={{ marginLeft: '0.6rem', background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: 'white', WebkitTextFillColor: 'white', fontSize: '0.6rem', padding: '0.15rem 0.5rem', borderRadius: '2rem', verticalAlign: 'middle', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', boxShadow: '0 4px 10px rgba(99, 102, 241, 0.4)' }}>Pro</span>}
           </h1>
         </div>

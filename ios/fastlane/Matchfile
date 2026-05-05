@@ -1,7 +1,7 @@
 app_identifier("uk.co.taxsense.app")
 
 # Use App Store Connect API Key for authentication
-api_key_path("ios/AuthKey.p8")
+api_key_path("AuthKey.p8")
 
 # Storage
 storage_mode("git")

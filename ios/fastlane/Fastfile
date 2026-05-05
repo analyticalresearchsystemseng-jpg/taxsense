@@ -12,12 +12,13 @@ platform :ios do
       in_house: false
     )
 
-    # Download certificates and provisioning profiles
+    # Generate or download certificates and provisioning profiles
     match(
       type: "appstore",
       app_identifier: "uk.co.taxsense.app",
-      readonly: true,
-      api_key: api_key
+      readonly: false,
+      api_key: api_key,
+      force_for_new_devices: false
     )
 
     # Build the app

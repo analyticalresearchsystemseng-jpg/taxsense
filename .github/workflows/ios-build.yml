@@ -63,28 +63,23 @@ jobs:
             exit 1
           fi
       
-      - name: Configure Match SSH Key
+      - name: Configure Git Credentials for Match
         env:
-          MATCH_SSH_KEY: ${{ secrets.MATCH_SSH_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          if [ -n "$MATCH_SSH_KEY" ]; then
-            echo "Setting up Match SSH key..."
-            mkdir -p ~/.ssh
-            echo "$MATCH_SSH_KEY" > ~/.ssh/match_key
-            chmod 600 ~/.ssh/match_key
-            cat >> ~/.ssh/config << EOF
-          Host taxsense-match
-            HostName github.com
-            User git
-            IdentityFile ~/.ssh/match_key
-            StrictHostKeyChecking no
-          EOF
-            chmod 600 ~/.ssh/config
-            echo "✅ Match SSH key configured"
-          else
-            echo "⚠️ MATCH_SSH_KEY not set — assuming public access or HTTPS"
-          fi
+          echo "Configuring git credentials for Match repo access..."
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          echo "✅ Git credentials configured"
+      
+      - name: Configure Git Credentials for Match
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          echo "Configuring git credentials for Match repo access..."
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          echo "✅ Git credentials configured"
       
       - name: Build and Upload to TestFlight
         env:
@@ -92,6 +87,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          FASTLANE_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
         run: |
           cd ios
           echo "=== Directory contents ==="

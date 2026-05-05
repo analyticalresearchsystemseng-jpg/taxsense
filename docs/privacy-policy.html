@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaxSense Privacy Policy</title>
+    <style>
+        :root {
+            --bg-dark: #0a0d1a;
+            --bg-card: #12162d;
+            --primary: #6366f1;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --glass-border: rgba(255,255,255,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        header {
+            text-align: center;
+            padding: 2rem 0 3rem;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 3rem;
+        }
+        .logo {
+            width: 4rem; height: 4rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #818cf8 100%);
+            border-radius: 1rem;
+            margin: 0 auto 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: bold; color: white;
+        }
+        h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .subtitle { color: var(--text-muted); font-size: 0.9rem; }
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        h2 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex; align-items: center;
+            gap: 0.5rem;
+        }
+        h2::before {
+            content: '';
+            width: 4px; height: 1.2rem;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        p { margin-bottom: 1rem; color: var(--text-muted); }
+        p:last-child { margin-bottom: 0; }
+        ul {
+            color: var(--text-muted);
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        li { margin-bottom: 0.5rem; }
+        .highlight {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin: 1.5rem 0;
+        }
+        .highlight p { margin: 0; color: var(--text-main); }
+        footer {
+            text-align: center;
+            padding: 3rem 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 3rem;
+        }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">S</div>
+            <h1>Privacy Policy</h1>
+            <p class="subtitle">TaxSense — Privacy-First Tax Estimation</p>
+            <p class="subtitle">Effective Date: May 4, 2026</p>
+        </header>
+
+        <div class="highlight">
+            <p><strong>Privacy-First Commitment:</strong> TaxSense stores all your financial data locally on your device. We do not collect, transmit, or store any personal information on external servers.</p>
+        </div>
+
+        <div class="section">
+            <h2>1. Information We Collect</h2>
+            <p>TaxSense operates entirely on your device. The only data we handle:</p>
+            <ul>
+                <li><strong>Financial Data:</strong> Your salary, pension, tax code, and monthly entries are stored locally in your browser's IndexedDB and localStorage.</li>
+                <li><strong>Subscription Status:</strong> We use RevenueCat to validate your App Store subscription. RevenueCat processes payment information — we never see your payment details.</li>
+                <li><strong>Anonymous Diagnostics:</strong> We may collect anonymous crash reports and usage statistics to improve the app. This data cannot identify you.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>2. Third-Party Services</h2>
+            <p>We use the following services:</p>
+            <ul>
+                <li><strong>RevenueCat:</strong> Subscription validation only. RevenueCat's privacy policy applies to their processing.</li>
+                <li><strong>Apple App Store:</strong> For subscription billing and app distribution. Apple's privacy policy applies.</li>
+            </ul>
+            <p><strong>We do NOT use:</strong> Firebase, Google Analytics, or any cloud database services.</p>
+        </div>
+
+        <div class="section">
+            <h2>3. Your Data Rights (GDPR / UK DPA)</h2>
+            <p>Under UK and EU data protection laws, you have the right to:</p>
+            <ul>
+                <li><strong>Access:</strong> Export your data at any time via the app's export feature.</li>
+                <li><strong>Rectify:</strong> Edit your data anytime within the app.</li>
+                <li><strong>Erase:</strong> Delete all your data permanently using "Delete Account" in Settings. This removes all data from your device.</li>
+                <li><strong>Portability:</strong> Export your data in JSON format.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>4. Data Security</h2>
+            <p>Your data is stored on your device using browser security mechanisms. While we don't transmit your data over networks, you are responsible for:</p>
+            <ul>
+                <li>Securing your physical device with a passcode or biometric lock.</li>
+                <li>Backing up your device via iCloud or iTunes to prevent data loss.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>5. Children's Privacy</h2>
+            <p>TaxSense is not intended for children under 13. We do not knowingly collect data from children under 13. If you believe we have inadvertently collected such data, please contact us to delete it.</p>
+        </div>
+
+        <div class="section">
+            <h2>6. Changes to This Policy</h2>
+            <p>We may update this privacy policy from time to time. Changes will be posted on this page with an updated effective date. Continued use of TaxSense after changes constitutes acceptance of the new policy.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. Contact Us</h2>
+            <p>For privacy questions or data requests:</p>
+            <p>Email: <a href="mailto:analyticalresearchsystemseng@gmail.com">analyticalresearchsystemseng@gmail.com</a></p>
+            <p>Address: 60 Southridge Road, Crowborough, East Sussex, TN6 1NA, United Kingdom, United Kingdom</p>
+        </div>
+
+        <footer>
+            <p>© 2026 TaxSense. All rights reserved.</p>
+            <p>This privacy policy was last updated on May 4, 2026.</p>
+        </footer>
+    </div>
+</body>
+</html>

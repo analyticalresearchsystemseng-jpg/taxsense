@@ -1,0 +1,34 @@
+platform :ios, '15.0'
+use_frameworks! :linkage => :static
+
+target 'App' do
+  # Capacitor Core
+  pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
+  pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
+  
+  # Capacitor Plugins
+  pod 'CapacitorCamera', :path => '../../node_modules/@capacitor/camera'
+  pod 'CapacitorPreferences', :path => '../../node_modules/@capacitor/preferences'
+  pod 'CapacitorSplashScreen', :path => '../../node_modules/@capacitor/splash-screen'
+  pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
+  
+  # RevenueCat
+  pod 'RevenuecatPurchasesCapacitor', :path => '../../node_modules/@revenuecat/purchases-capacitor'
+
+  # --- TAXSENSE SIGNING HOOK BEGIN ---
+  # This section will be managed by fix-ios-signing.cjs
+  # --- TAXSENSE SIGNING HOOK END ---
+end
+
+post_install do |installer|
+  # --- TAXSENSE SIGNING HOOK BEGIN ---
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['DEVELOPMENT_TEAM'] = 'M6BWMNZQ57'
+      config.build_settings['CODE_SIGN_IDENTITY'] = '"Apple Distribution"'
+      config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+    end
+  end
+  # --- TAXSENSE SIGNING HOOK END ---
+end

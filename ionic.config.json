@@ -1,0 +1,8 @@
+{
+    "name": "TaxSense",
+    "id": "735623b4",
+    "integrations": {
+        "capacitor": {}
+    },
+    "type": "react"
+}

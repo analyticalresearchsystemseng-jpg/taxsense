@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>TaxSense</title>
+    <style>
+      #boot-diagnostic {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: #0a0d1a;
+        color: #fca5a5;
+        padding: 2rem;
+        font-family: sans-serif;
+        z-index: 99999;
+        text-align: center;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      #boot-diagnostic .icon { font-size: 3rem; margin-bottom: 1rem; }
+      #boot-diagnostic h2 { margin: 0 0 1rem; }
+      #error-details {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.8rem;
+        text-align: left;
+        max-width: 90vw;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        margin-bottom: 1.5rem;
+      }
+      #boot-diagnostic p { opacity: 0.7; max-width: 300px; line-height: 1.5; font-size: 0.9rem; }
+      #boot-diagnostic .actions { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center; }
+      #boot-diagnostic button {
+        background: #6366f1;
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      #boot-diagnostic button.secondary { background: #475569; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="boot-diagnostic">
+      <div class="icon">🕵️</div>
+      <h2>Startup Error Detected</h2>
+      <pre id="error-details"></pre>
+      <p>The app failed to initialize. Please take a screenshot of this error and send it to support.</p>
+      <div class="actions">
+        <button onclick="window.location.reload()">RETRY BOOT</button>
+        <button class="secondary" onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload();">CLEAR CACHE & RESTART</button>
+      </div>
+    </div>
+    <script>
+      (function() {
+        var errorDisplay = document.getElementById('error-details');
+        var diagnosticDiv = document.getElementById('boot-diagnostic');
+        
+        function showError(msg, details) {
+          diagnosticDiv.style.display = 'flex';
+          errorDisplay.textContent = msg + (details ? '\n\n' + details : '');
+        }
+
+        window.onerror = function(msg, url, line, col, error) {
+          showError('Runtime Error: ' + msg, 'At: ' + url + ':' + line + ':' + col + '\nStack: ' + (error ? error.stack : 'N/A'));
+          return false;
+        };
+
+        window.onunhandledrejection = function(event) {
+          showError('Promise Rejection', 'Reason: ' + event.reason);
+        };
+
+        // Script load failure detection
+        window.addEventListener('error', function(e) {
+          if (e.target.tagName === 'SCRIPT') {
+            showError('Script Load Failure', 'Failed to load: ' + e.target.src + '\nCheck if asset exists in app bundle.');
+          }
+        }, true);
+
+        // Boot Watchdog: If React doesn't mount in 12s
+        setTimeout(() => {
+          if (!document.getElementById('root').hasChildNodes() && diagnosticDiv.style.display === 'none') {
+            showError('Initialization Timeout', 'The app bundle loaded but React failed to mount the UI within 12 seconds.');
+          }
+        }, 12000);
+      })();
+    </script>
+    <script type="module" src="./src/main.jsx"></script>
+  </body>
+</html>

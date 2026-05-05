@@ -63,6 +63,29 @@ jobs:
             exit 1
           fi
       
+      - name: Configure Match SSH Key
+        env:
+          MATCH_SSH_KEY: ${{ secrets.MATCH_SSH_KEY }}
+        run: |
+          set -e
+          if [ -n "$MATCH_SSH_KEY" ]; then
+            echo "Setting up Match SSH key..."
+            mkdir -p ~/.ssh
+            echo "$MATCH_SSH_KEY" > ~/.ssh/match_key
+            chmod 600 ~/.ssh/match_key
+            cat >> ~/.ssh/config << EOF
+          Host taxsense-match
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/match_key
+            StrictHostKeyChecking no
+          EOF
+            chmod 600 ~/.ssh/config
+            echo "✅ Match SSH key configured"
+          else
+            echo "⚠️ MATCH_SSH_KEY not set — assuming public access or HTTPS"
+          fi
+      
       - name: Build and Upload to TestFlight
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

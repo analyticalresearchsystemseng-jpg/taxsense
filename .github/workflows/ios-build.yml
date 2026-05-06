@@ -43,54 +43,24 @@ jobs:
           KEY_FILE="ios/AuthKey.p8"
           mkdir -p ios
           
-          # Detect if the secret is base64-encoded and decode if necessary
-          if echo "$ASC_KEY_P8" | base64 -d 2>/dev/null | grep -q 'BEGIN PRIVATE KEY'; then
-            echo "Detected base64-encoded key — decoding..."
-            echo "$ASC_KEY_P8" | base64 -d > "$KEY_FILE"
-          else
-            echo "Writing raw PEM key..."
-            printf '%s\n' "$ASC_KEY_P8" > "$KEY_FILE"
-          fi
-          
+          # Write raw PEM key
+          printf '%s\n' "$ASC_KEY_P8" > "$KEY_FILE"
           chmod 600 "$KEY_FILE"
           
           # Validate PEM format
           if head -1 "$KEY_FILE" | grep -q 'BEGIN PRIVATE KEY'; then
             echo "✅ Key file is valid PEM, size: $(wc -c < "$KEY_FILE") bytes"
           else
-            echo "❌ Key file does not look like PEM:"
-            head -3 "$KEY_FILE"
+            echo "❌ Key file does not look like PEM"
             exit 1
           fi
-      
-      - name: Configure Git Credentials for Match
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          echo "Configuring git credentials for Match repo access..."
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          echo "✅ Git credentials configured"
-      
-      - name: Configure Git Credentials for Match
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          echo "Configuring git credentials for Match repo access..."
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          echo "✅ Git credentials configured"
       
       - name: Build and Upload to TestFlight
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          FASTLANE_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
         run: |
           cd ios
-          echo "=== Directory contents ==="
-          ls -la
           echo "=== Running fastlane build ==="
           fastlane build

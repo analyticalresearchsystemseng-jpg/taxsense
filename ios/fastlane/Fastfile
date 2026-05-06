@@ -12,6 +12,12 @@ platform :ios do
       in_house: false
     )
 
+    # Get or create certificate
+    cert(
+      api_key: api_key,
+      development: false
+    )
+
     # Download or create provisioning profile via API
     sigh(
       api_key: api_key,

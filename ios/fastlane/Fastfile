@@ -12,27 +12,22 @@ platform :ios do
       in_house: false
     )
 
-    # Get or create certificate
-    cert(
-      api_key: api_key,
-      development: false
-    )
-
-    # Download or create provisioning profile via API
-    sigh(
-      api_key: api_key,
+    # Generate or download certificates and provisioning profiles
+    match(
+      type: "appstore",
       app_identifier: "uk.co.taxsense.app",
-      provisioning_name: "TaxSense App Store",
-      force: true
+      readonly: false,
+      api_key: api_key,
+      force_for_new_devices: false
     )
 
-    # Update code signing to use the downloaded profile
+    # Update code signing settings to use the match provisioning profile
     update_code_signing_settings(
       use_automatic_signing: false,
       path: "App/App.xcodeproj",
       team_id: ENV["ASC_TEAM_ID"],
       code_sign_identity: "Apple Distribution",
-      profile_name: "TaxSense App Store",
+      profile_name: "match AppStore uk.co.taxsense.app",
       bundle_identifier: "uk.co.taxsense.app"
     )
 

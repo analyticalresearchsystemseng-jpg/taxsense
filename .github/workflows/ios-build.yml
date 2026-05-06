@@ -55,6 +55,15 @@ jobs:
             exit 1
           fi
       
+      - name: Configure Git Credentials for Match
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          set -e
+          echo "Configuring git credentials for Match repo access..."
+          git config --global url."https://x-access-token:${GH_PAT}@github.com/".insteadOf "https://github.com/"
+          echo "✅ Git credentials configured"
+      
       - name: Build and Upload to TestFlight
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

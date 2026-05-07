@@ -31,16 +31,7 @@ jobs:
           cd ios/App
           pod install --repo-update
       
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
-      
-      - name: Install Fastlane
-        run: gem install fastlane
-      
-      - name: Setup API Key for xcodebuild
+      - name: Setup App Store Connect API Key
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
@@ -88,6 +79,8 @@ jobs:
               <string>app-store</string>
               <key>signingStyle</key>
               <string>automatic</string>
+              <key>teamID</key>
+              <string>${{ secrets.ASC_TEAM_ID }}</string>
           </dict>
           </plist>
           PLIST

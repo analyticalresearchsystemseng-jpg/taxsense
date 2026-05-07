@@ -21,7 +21,17 @@ platform :ios do
       force_for_new_devices: false
     )
 
-    # Build the app with manual signing
+    # Set provisioning profile in Xcode project for archive step
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "App/App.xcodeproj",
+      team_id: ENV["ASC_TEAM_ID"],
+      code_sign_identity: "Apple Distribution",
+      profile_name: "match AppStore uk.co.taxsense.app 1778177425",
+      bundle_identifier: "uk.co.taxsense.app"
+    )
+
+    # Build and export with manual signing
     build_app(
       scheme: "App",
       project: "App/App.xcodeproj",

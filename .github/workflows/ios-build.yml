@@ -40,42 +40,82 @@ jobs:
       - name: Install Fastlane
         run: gem install fastlane
       
-      - name: Setup API Key
+      - name: Setup API Key for xcodebuild
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
           set -e
-          KEY_FILE="ios/AuthKey.p8"
-          mkdir -p ios
-          
-          # Write raw PEM key
+          KEY_FILE="/tmp/AuthKey.p8"
           printf '%s\n' "$ASC_KEY_P8" > "$KEY_FILE"
           chmod 600 "$KEY_FILE"
-          
-          # Validate PEM format
           if head -1 "$KEY_FILE" | grep -q 'BEGIN PRIVATE KEY'; then
-            echo "✅ Key file is valid PEM, size: $(wc -c < "$KEY_FILE") bytes"
+            echo "✅ Key file ready for xcodebuild"
           else
-            echo "❌ Key file does not look like PEM"
+            echo "❌ Key file invalid"
             exit 1
           fi
       
-      - name: Configure Git Credentials for Match
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+      - name: Archive (automatic signing)
         run: |
-          set -e
-          echo "Configuring git credentials for Match repo access..."
-          git config --global url."https://x-access-token:${GH_PAT}@github.com/".insteadOf "https://github.com/"
-          echo "✅ Git credentials configured"
-      
-      - name: Build and Upload to TestFlight
+          cd ios
+          xcodebuild archive \
+            -scheme App \
+            -workspace App/App.xcworkspace \
+            -destination 'generic/platform=iOS' \
+            -archivePath ./build/App.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationIssuerID "$ASC_ISSUER_ID" \
+            -authenticationKeyPath /tmp/AuthKey.p8 \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM="$ASC_TEAM_ID"
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      
+      - name: Export IPA
         run: |
           cd ios
-          echo "=== Running fastlane build ==="
-          fastlane build
+          mkdir -p build/export
+          
+          cat > build/exportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+          </dict>
+          </plist>
+          PLIST
+          
+          xcodebuild -exportArchive \
+            -archivePath ./build/App.xcarchive \
+            -exportOptionsPlist ./build/exportOptions.plist \
+            -exportPath ./build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationIssuerID "$ASC_ISSUER_ID" \
+            -authenticationKeyPath /tmp/AuthKey.p8
+          
+          echo "✅ IPA exported to: build/export/App.ipa"
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      
+      - name: Upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          echo "=== Uploading IPA to TestFlight ==="
+          xcrun altool --upload-app \
+            --type ios \
+            --file ios/build/export/App.ipa \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+          echo "✅ Uploaded to TestFlight"

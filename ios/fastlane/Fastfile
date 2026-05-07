@@ -20,10 +20,10 @@ platform :ios do
       api_key: api_key
     )
 
-    # Build the app (signing configured directly in project.pbxproj)
+    # Build the app using workspace (required for CocoaPods)
     build_app(
       scheme: "App",
-      project: "App/App.xcodeproj",
+      workspace: "App/App.xcworkspace",
       export_method: "app-store",
       configuration: "Release"
     )

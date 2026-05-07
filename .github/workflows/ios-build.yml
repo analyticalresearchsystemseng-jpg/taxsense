@@ -65,7 +65,7 @@ jobs:
             -archivePath ./build/App.xcarchive \
             -allowProvisioningUpdates \
             -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationIssuerID "$ASC_ISSUER_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             -authenticationKeyPath /tmp/AuthKey.p8 \
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM="$ASC_TEAM_ID"
@@ -98,7 +98,7 @@ jobs:
             -exportPath ./build/export \
             -allowProvisioningUpdates \
             -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationIssuerID "$ASC_ISSUER_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             -authenticationKeyPath /tmp/AuthKey.p8
           
           echo "✅ IPA exported to: build/export/App.ipa"

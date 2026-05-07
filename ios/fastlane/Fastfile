@@ -12,37 +12,20 @@ platform :ios do
       in_house: false
     )
 
-    # Generate or download certificates and provisioning profiles
+    # Download certificates and provisioning profiles from Match
     match(
       type: "appstore",
       app_identifier: "uk.co.taxsense.app",
       readonly: true,
-      api_key: api_key,
-      force_for_new_devices: false
+      api_key: api_key
     )
 
-    # Set provisioning profile in Xcode project for archive step
-    update_code_signing_settings(
-      use_automatic_signing: false,
-      path: "App/App.xcodeproj",
-      team_id: ENV["ASC_TEAM_ID"],
-      code_sign_identity: "Apple Distribution",
-      profile_name: "match AppStore uk.co.taxsense.app 1778177425",
-      bundle_identifier: "uk.co.taxsense.app"
-    )
-
-    # Build and export with manual signing
+    # Build the app (signing configured directly in project.pbxproj)
     build_app(
       scheme: "App",
       project: "App/App.xcodeproj",
       export_method: "app-store",
-      configuration: "Release",
-      export_options: {
-        provisioningProfiles: {
-          "uk.co.taxsense.app" => "match AppStore uk.co.taxsense.app 1778177425"
-        },
-        signingStyle: "manual"
-      }
+      configuration: "Release"
     )
 
     # Upload to TestFlight

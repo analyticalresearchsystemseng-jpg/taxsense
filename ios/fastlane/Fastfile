@@ -16,17 +16,23 @@ platform :ios do
     match(
       type: "appstore",
       app_identifier: "uk.co.taxsense.app",
-      readonly: false,
+      readonly: true,
       api_key: api_key,
       force_for_new_devices: false
     )
 
-    # Build the app (Match has already installed the correct profile)
+    # Build the app with manual signing
     build_app(
       scheme: "App",
       project: "App/App.xcodeproj",
       export_method: "app-store",
-      configuration: "Release"
+      configuration: "Release",
+      export_options: {
+        provisioningProfiles: {
+          "uk.co.taxsense.app" => "match AppStore uk.co.taxsense.app 1778177425"
+        },
+        signingStyle: "manual"
+      }
     )
 
     # Upload to TestFlight

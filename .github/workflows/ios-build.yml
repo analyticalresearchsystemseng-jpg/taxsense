@@ -26,6 +26,11 @@ jobs:
       - name: Sync to iOS
         run: npx cap sync ios
       
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios/App
+          pod install --repo-update
+      
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:

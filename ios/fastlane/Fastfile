@@ -21,17 +21,7 @@ platform :ios do
       force_for_new_devices: false
     )
 
-    # Update code signing settings to use the match provisioning profile
-    update_code_signing_settings(
-      use_automatic_signing: false,
-      path: "App/App.xcodeproj",
-      team_id: ENV["ASC_TEAM_ID"],
-      code_sign_identity: "Apple Distribution",
-      profile_name: "match AppStore uk.co.taxsense.app",
-      bundle_identifier: "uk.co.taxsense.app"
-    )
-
-    # Build the app
+    # Build the app (Match has already installed the correct profile)
     build_app(
       scheme: "App",
       project: "App/App.xcodeproj",

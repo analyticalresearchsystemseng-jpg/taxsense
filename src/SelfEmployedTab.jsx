@@ -212,13 +212,7 @@ export default function SelfEmployedTab({
 
     const handleTakePhoto = async () => {
         try {
-            // Check permission first
-            const perm = await CapacitorCamera.requestPermissions();
-            if (perm.camera === 'denied') {
-                alert('Camera access is needed to capture receipt photos.');
-                return;
-            }
-            
+            await CapacitorCamera.requestPermissions();
             const image = await CapacitorCamera.getPhoto({
                 quality: 70,
                 allowEditing: false,
@@ -232,21 +226,12 @@ export default function SelfEmployedTab({
             }
         } catch (e) {
             console.warn('Camera error:', e);
-            // Only show error if it's not a user cancel
-            if (e.message && !e.message.includes('cancel') && !e.message.includes('User cancelled')) {
-                alert('Camera access is needed to capture receipt photos.');
-            }
         }
     };
 
     const handleSelectPhoto = async () => {
         try {
-            const perm = await CapacitorCamera.requestPermissions();
-            if (perm.photos === 'denied') {
-                alert('Photo library access is needed to attach receipts.');
-                return;
-            }
-            
+            await CapacitorCamera.requestPermissions();
             const image = await CapacitorCamera.getPhoto({
                 quality: 70,
                 allowEditing: false,
@@ -260,9 +245,6 @@ export default function SelfEmployedTab({
             }
         } catch (e) {
             console.warn('Photo library error:', e);
-            if (e.message && !e.message.includes('cancel') && !e.message.includes('User cancelled')) {
-                alert('Photo library access is needed to attach receipts.');
-            }
         }
     };
 

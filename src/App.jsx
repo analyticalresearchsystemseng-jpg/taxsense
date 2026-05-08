@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
-import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, LogOut, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, FileText, X, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, LogOut, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, FileText, X, ChevronRight, CloudUpload, CloudDownload, AlertCircle } from 'lucide-react';
 import { calculateTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
-import { getProfiles, saveProfiles, deleteUserData, isFirstLaunchAfterFirebaseRemoval, markFirebaseMigrationComplete, hasLocalData } from './services/LocalStorageService';
+import { getProfiles, saveProfiles, deleteUserData, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
 import PurchaseService from './services/PurchaseService';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell, PieChart, Pie, LineChart, Line } from 'recharts';
 import AuthModal from './AuthModal';
@@ -502,6 +502,9 @@ function App() {
   const [activeHelperId, setActiveHelperId] = useState(null);
   const [activeHelperText, setActiveHelperText] = useState(null);
 
+  // Backup & Restore State
+  const [backupStatus, setBackupStatus] = useState(null); // { type: 'success'|'error', message: string }
+
   // --- Helpers ---
   const getMonthlyValue = useCallback((amount, frequency) => {
     if (frequency === 'monthly') return Number(amount) || 0;
@@ -900,6 +903,70 @@ function App() {
       alert("Failed to delete account. Please try again or contact support.");
       setIsLoaded(true);
     }
+  };
+
+  // --- Backup & Restore Handlers ---
+  const handleExportBackup = async () => {
+    try {
+      setBackupStatus({ type: 'info', message: 'Preparing backup...' });
+      const json = await exportBackup();
+      const blob = new Blob([json], { type: 'application/json' });
+      const filename = `TaxSense_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      
+      // Try Share API first (iOS native)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'application/json' })] })) {
+        const file = new File([blob], filename, { type: 'application/json' });
+        await navigator.share({
+          files: [file],
+          title: 'TaxSense Backup',
+          text: `TaxSense backup from ${new Date().toLocaleDateString()}`
+        });
+        setBackupStatus({ type: 'success', message: 'Backup shared successfully!' });
+      } else {
+        // Fallback download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.visibility = 'hidden';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setBackupStatus({ type: 'success', message: 'Backup downloaded successfully!' });
+      }
+    } catch (e) {
+      console.error('Backup export failed:', e);
+      setBackupStatus({ type: 'error', message: 'Backup failed: ' + (e.message || 'Unknown error') });
+    }
+    
+    // Clear status after 4s
+    setTimeout(() => setBackupStatus(null), 4000);
+  };
+
+  const handleImportBackup = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      setBackupStatus({ type: 'info', message: 'Reading backup file...' });
+      const text = await file.text();
+      const result = await importBackup(text);
+      
+      if (result.success) {
+        setBackupStatus({ type: 'success', message: `Restored ${result.profileCount} year(s) successfully! Reloading...` });
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setBackupStatus({ type: 'error', message: 'Restore failed: ' + result.error });
+      }
+    } catch (e) {
+      console.error('Backup import failed:', e);
+      setBackupStatus({ type: 'error', message: 'Restore failed: Invalid file format' });
+    }
+    
+    // Reset input
+    e.target.value = '';
+    setTimeout(() => setBackupStatus(null), 5000);
   };
 
 
@@ -2461,6 +2528,120 @@ function App() {
                 <button onClick={exportToCSV} className="btn-primary" style={{ padding: '0.75rem 2rem' }}>
                   <Download size={18} style={{ marginRight: '0.5rem' }} /> Export Year to CSV
                 </button>
+              </div>
+
+              {/* Backup & Restore Section */}
+              <div className="settings-box" style={{ marginTop: '2rem', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CloudUpload size={18} color="var(--primary)" /> Backup & Restore
+                </h3>
+                
+                {/* Backup reminder banner */}
+                {shouldShowBackupReminder() && (
+                  <div style={{ 
+                    padding: '0.75rem 1rem', 
+                    background: 'rgba(251, 191, 36, 0.1)', 
+                    borderRadius: '0.5rem', 
+                    border: '1px solid rgba(251, 191, 36, 0.3)', 
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}>
+                    <AlertCircle size={18} color="#fbbf24" />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fbbf24' }}>Weekly Backup Reminder</div>
+                      <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.2rem' }}>Protect your data with a regular backup. Your data is stored locally on this device.</div>
+                    </div>
+                    <button 
+                      className="btn-icon" 
+                      style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+                      onClick={() => dismissBackupReminder()}
+                      title="Dismiss for 7 days"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {/* Last backup info */}
+                  {(() => {
+                    const lastDate = getLastBackupDate();
+                    if (lastDate) {
+                      return (
+                        <div style={{ fontSize: '0.8rem', opacity: 0.6, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Clock size={14} />
+                          Last backup: {lastDate.toLocaleDateString()} at {lastDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{ fontSize: '0.8rem', opacity: 0.5, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <AlertCircle size={14} />
+                        No backup found. Tap "Create Backup" to export your data.
+                      </div>
+                    );
+                  })()}
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                    <button 
+                      onClick={handleExportBackup} 
+                      className="btn-primary"
+                      style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    >
+                      <CloudDownload size={18} />
+                      <span>Create Backup</span>
+                    </button>
+                    
+                    <label 
+                      className="btn-secondary"
+                      style={{ 
+                        padding: '0.75rem 1.5rem', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: '0.5rem',
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <CloudUpload size={18} />
+                      <span>Restore from Backup</span>
+                      <input
+                        type="file"
+                        accept=".json,application/json"
+                        onChange={handleImportBackup}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                  
+                  <div style={{ fontSize: '0.7rem', opacity: 0.5, marginTop: '0.5rem' }}>
+                    Backups include all your tax profiles, settings, and receipt photo metadata. Receipt images remain on-device and are backed up via iCloud if enabled.
+                  </div>
+                  
+                  {/* Status message */}
+                  {backupStatus && (
+                    <div style={{
+                      padding: '0.75rem 1rem',
+                      borderRadius: '0.5rem',
+                      marginTop: '0.5rem',
+                      fontSize: '0.85rem',
+                      background: backupStatus.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 
+                                  backupStatus.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 
+                                  'rgba(99, 102, 241, 0.1)',
+                      border: `1px solid ${backupStatus.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 
+                                            backupStatus.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 
+                                            'rgba(99, 102, 241, 0.3)'}`,
+                      color: backupStatus.type === 'error' ? '#f87171' : 
+                             backupStatus.type === 'success' ? '#34d399' : 
+                             'var(--primary)'
+                    }}>
+                      {backupStatus.message}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Moved Privacy Section v63 */}

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, Download, Printer, Car, Receipt, TrendingUp, FileText, AlertCircle, CheckCircle, Clock, Briefcase, ShieldCheck, X, Info } from 'lucide-react';
+import { Plus, Trash2, Download, Printer, Car, Receipt, TrendingUp, FileText, AlertCircle, CheckCircle, Clock, Briefcase, ShieldCheck, X, Info, Camera, Image } from 'lucide-react';
+import { Camera as CapacitorCamera } from '@capacitor/camera';
 import {
     calculateMileageAllowance,
     calculateSEProfit,
@@ -162,6 +163,8 @@ export default function SelfEmployedTab({
         };
     }, [months, assets, taxYear, useTradingAllowance, payeANI, payeIncomeTaxPaid, taxCode, seData?.sippContributions]);
 
+    const [photoPreview, setPhotoPreview] = useState(null);
+
     const openAddModal = (type) => {
         // subscription limits (trial mode for Free and Annual)
         if (subscriptionTier !== 'monthly') {
@@ -191,18 +194,58 @@ export default function SelfEmployedTab({
 
         let template = {};
         if (type === 'invoice') template = { invoiceNumber: '', client: '', amount: '', date: new Date().toISOString().split('T')[0], paid: false };
-        else if (type === 'expense') template = { category: 'office', description: '', amount: '', date: new Date().toISOString().split('T')[0] };
+        else if (type === 'expense') template = { category: 'office', description: '', amount: '', date: new Date().toISOString().split('T')[0], receiptPhoto: null };
         else if (type === 'asset') template = { name: '', cost: '', assetType: 'equipment', date: new Date().toISOString().split('T')[0] };
         else if (type === 'mileage') template = { description: '', miles: '', date: new Date().toISOString().split('T')[0] };
 
+        setPhotoPreview(null);
         setModalData({ type, id: null, ...template });
         setShowModal(true);
     };
 
     const openEditModal = (type, item) => {
         const editData = type === 'asset' ? { ...item, assetType: item.type } : item;
+        setPhotoPreview(editData.receiptPhoto || null);
         setModalData({ type, ...editData });
         setShowModal(true);
+    };
+
+    const handleTakePhoto = async () => {
+        try {
+            const image = await CapacitorCamera.getPhoto({
+                quality: 70,
+                allowEditing: false,
+                resultType: 'base64',
+                source: 'camera'
+            });
+            if (image.base64String) {
+                const base64 = `data:image/jpeg;base64,${image.base64String}`;
+                setPhotoPreview(base64);
+                setModalData(prev => ({ ...prev, receiptPhoto: base64 }));
+            }
+        } catch (e) {
+            console.warn('Camera error:', e);
+            alert('Could not capture photo. Please check camera permissions in Settings.');
+        }
+    };
+
+    const handleSelectPhoto = async () => {
+        try {
+            const image = await CapacitorCamera.getPhoto({
+                quality: 70,
+                allowEditing: false,
+                resultType: 'base64',
+                source: 'photos'
+            });
+            if (image.base64String) {
+                const base64 = `data:image/jpeg;base64,${image.base64String}`;
+                setPhotoPreview(base64);
+                setModalData(prev => ({ ...prev, receiptPhoto: base64 }));
+            }
+        } catch (e) {
+            console.warn('Photo library error:', e);
+            alert('Could not select photo. Please check photo library permissions.');
+        }
     };
 
     const handleSaveModal = () => {
@@ -419,16 +462,21 @@ export default function SelfEmployedTab({
                         <p style={{ opacity: 0.4, textAlign: 'center', padding: '1.5rem 0' }}>No expenses for {MONTHS[selectedMonth]}.</p>
                     )}
                     {(months[selectedMonth].expenses || []).map(exp => (
-                        <div 
-                            key={exp.id} 
-                            className="overtime-line glass-card clickable" 
+                        <div
+                            key={exp.id}
+                            className="overtime-line glass-card clickable"
                             style={{ borderLeft: '4px solid var(--error)', marginBottom: '1rem', padding: '1rem', cursor: 'pointer' }}
                             onClick={() => openEditModal('expense', exp)}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <div style={{ fontWeight: 800 }}>{exp.description || 'No description'}</div>
-                                    <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '0.2rem' }}>{EXPENSE_CATEGORIES.find(c => c.value === exp.category)?.label || exp.category} • {new Date(exp.date).toLocaleDateString()}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    {exp.receiptPhoto && (
+                                        <img src={exp.receiptPhoto} alt="Receipt" style={{ width: '40px', height: '40px', borderRadius: '0.4rem', objectFit: 'cover', border: '1px solid var(--glass-border)' }} />
+                                    )}
+                                    <div>
+                                        <div style={{ fontWeight: 800 }}>{exp.description || 'No description'}</div>
+                                        <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '0.2rem' }}>{EXPENSE_CATEGORIES.find(c => c.value === exp.category)?.label || exp.category} • {new Date(exp.date).toLocaleDateString()}</div>
+                                    </div>
                                 </div>
                                 <div style={{ fontWeight: 800, color: 'var(--error)', fontSize: '1.1rem' }}>-£{fmt(exp.amount)}</div>
                             </div>
@@ -775,6 +823,26 @@ export default function SelfEmployedTab({
                                     <div style={{ display: 'flex', gap: '1rem' }}>
                                         <div style={{ flex: 1 }}><label className="stat-label">Amount (£)</label> <HelperInfo id="seExpAmount" activeId={activeHelperId} setActiveId={setActiveHelperId} setActiveText={setActiveText} text="The total cost of the expense. TaxSense will handle the deduction logic based on your overall profit projection." /><input type="number" className="input-field" value={modalData.amount} onChange={e => setModalData({ ...modalData, amount: e.target.value })} /></div>
                                         <div style={{ flex: 1 }}><label className="stat-label">Date</label><input type="date" className="input-field" value={modalData.date} onChange={e => setModalData({ ...modalData, date: e.target.value })} /></div>
+                                    </div>
+                                    {/* Receipt Photo Capture */}
+                                    <div style={{ marginTop: '0.5rem' }}>
+                                        <label className="stat-label">Receipt Photo</label>
+                                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                                            <button type="button" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }} onClick={handleTakePhoto}>
+                                                <Camera size={16} /> Take Photo
+                                            </button>
+                                            <button type="button" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }} onClick={handleSelectPhoto}>
+                                                <Image size={16} /> Choose from Library
+                                            </button>
+                                        </div>
+                                        {photoPreview && (
+                                            <div style={{ marginTop: '0.75rem', position: 'relative', display: 'inline-block' }}>
+                                                <img src={photoPreview} alt="Receipt preview" style={{ maxWidth: '120px', maxHeight: '120px', borderRadius: '0.5rem', border: '1px solid var(--glass-border)', objectFit: 'cover' }} />
+                                                <button type="button" className="btn-icon" style={{ position: 'absolute', top: '-6px', right: '-6px', background: 'var(--error)', color: 'white', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => { setPhotoPreview(null); setModalData(prev => ({ ...prev, receiptPhoto: null })); }}>
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </>
                             )}

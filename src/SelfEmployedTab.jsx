@@ -225,6 +225,7 @@ export default function SelfEmployedTab({
                 setModalData(prev => ({ ...prev, receiptPhoto: base64 }));
             }
         } catch (e) {
+            alert('Could not open camera: ' + (e.message || 'Unknown error'));
             console.warn('Camera error:', e);
         }
     };
@@ -244,6 +245,7 @@ export default function SelfEmployedTab({
                 setModalData(prev => ({ ...prev, receiptPhoto: base64 }));
             }
         } catch (e) {
+            alert('Could not open photo library: ' + (e.message || 'Unknown error'));
             console.warn('Photo library error:', e);
         }
     };

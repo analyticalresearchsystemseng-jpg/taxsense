@@ -1,8 +1,0 @@
-name: Check Xcode Versions
-on: workflow_dispatch
-jobs:
-  check:
-    runs-on: macos-latest
-    steps:
-      - run: xcodebuild -version && xcode-select -p && xcrun --sdk iphoneos --show-sdk-version
-      - run: ls /Applications/Xcode*.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/

@@ -389,57 +389,7 @@ const AnalyticsTab = ({
   );
 };
 
-const LegalView = ({ type, onClose }) => {
-  const content = type === 'privacy' ? {
-    title: 'Privacy Policy',
-    date: 'March 24, 2026',
-    sections: [
-      { h: '1. Information We Collect', p: 'TaxSense is a privacy-first application. Your financial data is stored securely and locally on your device. We do not collect, transmit, or store any personal information on external servers. We also collect anonymous diagnostic data to monitor app health.' },
-      { h: '2. Third-Party Services', p: 'We use Apple RevenueCat to securely validate your App Store subscription purchases. We do not use Firebase or any cloud database. All your financial data remains on your device. We strictly do not sell your personal information.' },
-      { h: '3. Your Data Rights (GDPR/UK DPA)', p: 'You possess the right to access, rectify, or completely erase your personal data at any time by deleting the app. All data is stored locally on your device — uninstalling TaxSense permanently removes everything.' },
-      { h: '4. Data Security', p: 'All transmissions utilize industry-standard encryption. However, because the fundamental architecture relies on local storage, you are ultimately responsible for securing your physical device.' },
-      { h: '5. Contact', p: 'For any privacy inquiries, please contact our Data Protection Officer at analyticalresearchsystemseng@gmail.com.' }
-    ]
-  } : {
-    title: 'Terms & Conditions',
-    date: 'March 24, 2026',
-    sections: [
-      { h: '1. Acceptance of Terms & Disclaimers', p: 'By using TaxSense, you agree to these Terms. TaxSense provides informational estimates only and is not affiliated with HMRC. Never use the App\'s projections as the sole basis for submitting self-assessment tax returns or making major financial decisions.' },
-      { h: '2. Subscriptions & Billing', p: 'Premium features are available via auto-renewing subscriptions processed by the Apple App Store. Payment will be charged to your iTunes Account at confirmation of purchase. Your subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current billing cycle.' },
-      { h: '3. Subscription Management & Refunds', p: 'You can manage or cancel your active subscriptions by going to your App Store Account Settings after purchase. All purchases are handled by Apple; any requests for refunds must be directed to Apple App Store customer service.' },
-      { h: '4. User Data', p: 'Your entries remain stored locally on your device. You are responsible for maintaining the security of your device and its data.' },
-      { h: '5. Limitation of Liability', p: 'To the fullest extent permitted by UK law, TaxSense shall not be liable for any indirect or consequential damages, including underpayment of tax or financial penalties, resulting from your use of the App.' },
-      { h: '6. Governing Law', p: 'These Terms shall be governed by the laws of England and Wales. Contact us at analyticalresearchsystemseng@gmail.com.' }
-    ]
-  };
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'var(--bg-main)', zIndex: 50000, overflowY: 'auto', padding: '2rem' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <button onClick={onClose} className="btn-secondary" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} /> Back to App
-        </button>
-        <h1 style={{ color: 'var(--primary)', borderBottom: '2px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>{content.title}</h1>
-        <p style={{ opacity: 0.5, fontSize: '0.8rem', marginBottom: '2rem' }}>Last Updated: {content.date}</p>
-        
-        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '1.25rem', borderRadius: '0.75rem', color: '#dc2626', marginBottom: '2rem', fontSize: '0.9rem' }}>
-          <strong>IMPORTANT:</strong> TaxSense provides <strong>informational estimates only</strong>. These results are not professional tax or financial advice.
-        </div>
-
-        {content.sections.map((s, i) => (
-          <div key={i} style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.75rem', color: 'var(--text-main)' }}>{s.h}</h2>
-            <p style={{ opacity: 0.8, lineHeight: '1.6' }}>{s.p}</p>
-          </div>
-        ))}
-
-        <footer style={{ marginTop: '4rem', padding: '2rem 0', borderTop: '1px solid var(--glass-border)', opacity: 0.5, fontSize: '0.8rem', textAlign: 'center' }}>
-          © 2026 TaxSense UK
-        </footer>
-      </div>
-    </div>
-  );
-};
 
 function App() {
   // --- Core Lifecycle & Auth State ---
@@ -460,7 +410,6 @@ function App() {
   const [otModalData, setOtModalData] = useState({ monthIdx: 0, hours: '', multiplier: 1.5, reason: '', date: new Date().toISOString().split('T')[0] });
   const [showBaseModifierModal, setShowBaseModifierModal] = useState(false);
   const [baseModifierModalData, setBaseModifierModalData] = useState({ id: null, type: 'enhancement', name: '', amount: '', frequency: 'annual', sacrificeType: 'salary_sacrifice', includeInPension: false });
-  const [legalView, setLegalView] = useState(null); // null | 'terms' | 'privacy'
 
   // --- Persistent State ---
   const [taxCode, setTaxCode] = useState('1257L');
@@ -996,13 +945,6 @@ function App() {
 
     return () => clearTimeout(timeoutIdx);
   }, [taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months, workMode, seData, hasCompletedTour, isLoaded, currentUser, taxYear, leaseConfig, mileageLogs, profiles]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const page = params.get('page');
-    if (page === 'terms') setLegalView('terms');
-    else if (page === 'privacy') setLegalView('privacy');
-  }, []);
 
   // Switch Year Handler
   const handleYearSwitch = (newYear) => {
@@ -1631,8 +1573,6 @@ function App() {
       </div>
     );
   }
-
-  if (legalView) return <LegalView type={legalView} onClose={() => setLegalView(null)} />;
 
   return (
     <>
@@ -2597,21 +2537,7 @@ function App() {
                 </div>
               </div>
 
-              {/* Moved Privacy Section v63 */}
-              <div className="settings-box" style={{ marginTop: '2rem' }}>
-                <h3><ShieldCheck size={16} style={{ verticalAlign: '-2px', marginRight: '0.4rem' }} /> Privacy & Security</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                    <button onClick={() => setLegalView('privacy')} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
-                      <FileText size={14} /> Privacy Policy
-                    </button>
-                    <button onClick={() => setLegalView('terms')} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
-                      <FileText size={14} /> Terms of Service
-                    </button>
-                  </div>
 
-                </div>
-              </div>
             </div>
           </div>
 
@@ -3002,10 +2928,7 @@ function App() {
             >
               Maybe Later
             </button>
-            <div style={{ marginTop: '1.5rem', fontSize: '0.7rem', opacity: 0.6, display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-              <button onClick={() => setLegalView('terms')} style={{ background: 'none', border: 'none', color: 'var(--primary)', textDecoration: 'underline', padding: 0, font: 'inherit', cursor: 'pointer' }}>Terms of Use</button>
-              <button onClick={() => setLegalView('privacy')} style={{ background: 'none', border: 'none', color: 'var(--primary)', textDecoration: 'underline', padding: 0, font: 'inherit', cursor: 'pointer' }}>Privacy Policy</button>
-            </div>
+
           </div>
         </div>
       )}

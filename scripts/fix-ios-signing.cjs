@@ -17,6 +17,15 @@ if (fs.existsSync(projectPath)) {
     // Inject Manual Style globally
     content = content.replace(/ProvisioningStyle = Automatic;/g, 'ProvisioningStyle = Manual;');
     
+    // Add PROVISIONING_PROFILE_SPECIFIER if not present
+    if (!content.includes('PROVISIONING_PROFILE_SPECIFIER')) {
+        // Find the target Release section and add the profile
+        content = content.replace(
+            /(504EC3181FED79650016851F \/\* Release \*\/ = \{[\s\S]*?ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;)/,
+            '$1\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app 1778177425";'
+        );
+    }
+    
     // Ensure the main project forces the Team ID
     if (content.includes('DevelopmentTeam =')) {
         content = content.replace(/DevelopmentTeam = .*?;/g, `DevelopmentTeam = ${TEAM_ID};`);

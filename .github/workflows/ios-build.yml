@@ -46,24 +46,14 @@ jobs:
             exit 1
           fi
       
-      - name: Archive (automatic signing)
+      - name: Archive (manual signing)
         run: |
           cd ios
           xcodebuild archive \
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            -authenticationKeyPath /tmp/AuthKey.p8 \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM="$ASC_TEAM_ID"
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          ASC_TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
+            -archivePath ./build/App.xcarchive
       
       - name: Export IPA
         run: |
@@ -78,7 +68,7 @@ jobs:
               <key>method</key>
               <string>app-store</string>
               <key>signingStyle</key>
-              <string>automatic</string>
+              <string>manual</string>
               <key>teamID</key>
               <string>${{ secrets.ASC_TEAM_ID }}</string>
           </dict>
@@ -88,11 +78,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath ./build/App.xcarchive \
             -exportOptionsPlist ./build/exportOptions.plist \
-            -exportPath ./build/export \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            -authenticationKeyPath /tmp/AuthKey.p8
+            -exportPath ./build/export
           
           echo "✅ IPA exported to: build/export/App.ipa"
         env:

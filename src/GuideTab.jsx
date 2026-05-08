@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { BookOpen, ChevronDown, ChevronRight, ExternalLink, Users, Calculator, Car, AlertTriangle, Calendar, Receipt, HelpCircle } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, ExternalLink, Users, Calculator, Car, AlertTriangle, Calendar, Receipt, HelpCircle, ClipboardList } from 'lucide-react';
 
-const Section = ({ icon, title, badge, children }) => {
-    const [open, setOpen] = useState(false);
+const Section = ({ icon, title, badge, children, openByDefault }) => {
+    const [open, setOpen] = useState(openByDefault || false);
     return (
         <div style={{ marginBottom: '0.75rem', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', overflow: 'hidden' }}>
             <button
@@ -76,6 +76,90 @@ export default function GuideTab({ taxYear, workMode }) {
                 </h2>
                 <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.5 }}>Plain-English answers to common tax questions. Tap any section to expand.</p>
             </div>
+
+            {/* === GETTING STARTED === */}
+            <Section icon={<ClipboardList size={17} />} title="Getting Started" badge="⭐ NEW USER" openByDefault={true}>
+                {workMode !== 'se' && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+                            🏢 PAYE (Employed) Setup
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                            {[
+                                ['1.', 'Go to', <strong key="s">Settings →</strong>, 'enter your', <strong key="as">Annual Gross Salary</strong>, ',', <strong key="ch">Contracted Hours</strong>, ', and', <strong key="tc">Tax Code</strong>],
+                                ['2.', 'Select your', <strong key="sl">Student Loan Plans</strong>, '(if you have one) — Plans 1, 2, 4, 5, or Postgraduate'],
+                                ['3.', 'Set up your', <strong key="pen">Pension</strong>, '(contribution % and type). Choose', <em key="ss">Salary Sacrifice</em>, 'to save Tax + NI.'],
+                                ['4.', 'Add', <strong key="cb">Child Benefit</strong>, 'count if you claim it — TaxSense will watch for the HICBC trap.'],
+                                ['5.', '(Optional) Add', <strong key="rm">Recurring Modifiers</strong>, '— enhancements (bonuses, car allowance) and sacrifices (cycle to work, lease car).'],
+                                ['6.', 'View your', <strong key="th">monthly take-home pay</strong>, 'on the', <strong key="db">Dashboard</strong>, 'tab — income, deductions, tax breakdown per month.'],
+                                ['7.', 'Log', <strong key="ot">Overtime</strong>, ': go to Overtime tab → Add Entry → enter hours and multiplier (1.5x, 2x, etc).'],
+                                ['8.', 'Check', <strong key="ins">Dashboard Insights</strong>, 'for tax code advice, underpayment warnings, and your', <em key="s2s">Safe to Spend</em>, 'calculation.'],
+                            ].map((step, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.84rem', lineHeight: 1.55 }}>
+                                    <span style={{ color: 'var(--primary)', fontWeight: 700, minWidth: '1.4rem' }}>{step[0]}</span>
+                                    <span>{step.slice(1)}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <Tip>Start on the <strong>Dashboard</strong> after setup — it shows your projected monthly net pay immediately.</Tip>
+                    </div>
+                )}
+
+                {workMode !== 'paye' && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+                            💼 Self-Employed (Sole Trader) Setup
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                            {[
+                                ['1.', 'Go to', <strong key="s">Settings → Work Mode</strong>, 'and choose', <strong key="se">Self-Employed</strong>, 'or', <strong key="both">Both</strong>],
+                                ['2.', <strong key="inc">Add Income</strong>, '— Self-Employed tab → Income → Add Item → enter invoices with amounts and mark as paid/unpaid'],
+                                ['3.', <strong key="exp">Track Expenses</strong>, '— Expenses sub-tab → Add Item → choose category (office, travel, marketing, etc.) and enter costs'],
+                                ['4.', '📸', <strong key="rec">Snap Receipts</strong>, '— When adding an expense, tap', <strong key="cam">Take Photo</strong>, 'or', <strong key="lib">Select Photo</strong>, 'to attach receipt images'],
+                                ['5.', <strong key="ast">Add Assets</strong>, '— Assets sub-tab → add equipment, vehicles, or tools for Capital Allowances (AIA 100%, WDA 18%/6%)'],
+                                ['6.', <strong key="mil">Log Mileage</strong>, '— Mileage sub-tab → add business journeys. First 10,000 miles at 45p/mile, then 25p/mile.'],
+                                ['7.', '⚡ <strong>Power Pack</strong> — VAT threshold monitor, SIPP pension contributions (get 25% tax top-up), and more.'],
+                                ['8.', <strong key="sm">Check Summary</strong>, '— Summary sub-tab shows your estimated Self Assessment bill, profit, and NI.'],
+                                ['9.', 'Toggle', <strong key="ta">Trading Allowance</strong>, '(£1,000 flat deduction) on/off in the Self-Employed header to compare vs actual expenses.'],
+                            ].map((step, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.84rem', lineHeight: 1.55 }}>
+                                    <span style={{ color: 'var(--primary)', fontWeight: 700, minWidth: '1.4rem' }}>{step[0]}</span>
+                                    <span>{step.slice(1)}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <Tip>Keep receipts for <strong>everything</strong> — HMRC can ask for records going back 5 years.</Tip>
+                    </div>
+                )}
+
+                {workMode === 'both' && (
+                    <Warn>
+                        <strong>Combined Income:</strong> Your PAYE salary fills your tax bands first. Self-Employed profit gets taxed at your next highest rate.
+                        Watch for the <strong>Personal Allowance Trap</strong> if combined income exceeds £100,000.
+                    </Warn>
+                )}
+
+                <h4 style={{ margin: '1rem 0 0.75rem', fontSize: '0.9rem', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+                    💡 General Tips
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.84rem', lineHeight: 1.55 }}>
+                    {[
+                        ['📤 <strong>CSV Export</strong> — Available for Overtime entries and Self-Employed data. Tap the Export button on those tabs.'],
+                        ['☁️ <strong>iCloud Backup</strong> — Settings → scroll to Backup & Restore. Save and restore all your profiles across devices.'],
+                        ['📅 <strong>Switch Tax Years</strong> — Settings → select a different tax year. Add as many years as you need.'],
+                        ['📋 <strong>Copy Settings</strong> — Settings → use Copy Settings to duplicate your configuration to another tax year.'],
+                        ['📸 <strong>Receipt Photos</strong> — When adding expenses, tap the camera or photo icon to attach receipt images.'],
+                        ['📊 <strong>Analytics Tab</strong> — See full-year projections with charts, tax breakdowns, and pension growth.'],
+                        ['🔄 <strong>Sandbox Mode</strong> — Test "what if" scenarios without affecting your real data (Config → Sandbox).'],
+                    ].map((tip, i) => (
+                        <div key={i} dangerouslySetInnerHTML={{ __html: tip[0] }} />
+                    ))}
+                </div>
+
+                <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--primary-light)', borderRadius: '0.5rem', fontSize: '0.82rem', border: '1px solid var(--primary)', opacity: 0.9 }}>
+                    💡 <strong>Pro tip:</strong> Bookmark this tab — it covers everything from how to file your Self Assessment to what expenses you can claim.
+                </div>
+            </Section>
 
             {/* === SELF ASSESSMENT === */}
             <Section icon={<Calculator size={17} />} title="What is Self Assessment?" badge={workMode !== 'paye' ? 'SE' : null}>

@@ -8,6 +8,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import AuthModal from './AuthModal';
 import SelfEmployedTab from './SelfEmployedTab';
 import GuideTab from './GuideTab';
+import SetupWizard from './SetupWizard';
 import { calculateSEProfit, calculateMileageAllowance, calculateSelfAssessment } from './logic/SelfAssessmentCalculator';
 
 const MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
@@ -493,7 +494,9 @@ function App() {
   const [selectedMonthIdx, setSelectedMonthIdx] = useState(0);
   const [months, setMonths] = useState(Array(12).fill(null).map(() => ({ income: [], overtime: [], deductions: [] })));
 
-  const [hasCompletedTour, setHasCompletedTour] = useState(true);
+  const [hasCompletedTour, setHasCompletedTour] = useState(() => {
+    return localStorage.getItem('taxsense_tour_complete') === 'true';
+  });
   const [subscriptionTier, setSubscriptionTier] = useState('free'); // 'free' | 'annual' | 'monthly'
   const isPremium = subscriptionTier !== 'free';
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -1695,6 +1698,21 @@ function App() {
   if (legalView) return <LegalView type={legalView} onClose={() => setLegalView(null)} />;
 
   return (
+    <>
+      {!hasCompletedTour && (
+        <SetupWizard
+          workMode={workMode} setWorkMode={setWorkMode}
+          baseSalary={baseSalary} setBaseSalary={setBaseSalary}
+          contractedHours={contractedHours} setContractedHours={setContractedHours}
+          taxCode={taxCode} setTaxCode={setTaxCode}
+          taxYear={taxYear} setTaxYear={setTaxYear}
+          studentLoanPlans={studentLoanPlans} setStudentLoanPlans={setStudentLoanPlans}
+          pensionPercent={pensionPercent} setPensionPercent={setPensionPercent}
+          pensionType={pensionType} setPensionType={setPensionType}
+          childBenefitCount={childBenefitCount} setChildBenefitCount={setChildBenefitCount}
+          setHasCompletedTour={setHasCompletedTour}
+        />
+      )}
     <div className="app-container">
       <header style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '1rem', paddingTop: '0.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
@@ -3133,6 +3151,7 @@ function App() {
         <p>© 2026 TaxSense UK. For informational purposes only. This app provides mathematical estimates and illustrative projections based on current UK tax rates. It does not constitute financial, legal, or professional tax advice. Always consult with HMRC or a qualified professional for your personal circumstances.</p>
       </footer>
     </div>
+    </>
   );
 }
 

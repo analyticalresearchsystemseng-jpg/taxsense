@@ -78,66 +78,58 @@ export default function GuideTab({ taxYear, workMode }) {
             </div>
 
             {/* === GETTING STARTED === */}
-            <Section icon={<ClipboardList size={17} />} title="Getting Started" badge="⭐ NEW USER" openByDefault={true}>
-                {workMode !== 'se' && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
-                            🏢 PAYE (Employed) Setup
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                            {[
-                                ['1.', 'Go to', <strong key="s">Settings →</strong>, 'enter your', <strong key="as">Annual Gross Salary</strong>, ',', <strong key="ch">Contracted Hours</strong>, ', and', <strong key="tc">Tax Code</strong>],
-                                ['2.', 'Select your', <strong key="sl">Student Loan Plans</strong>, '(if you have one) — Plans 1, 2, 4, 5, or Postgraduate'],
-                                ['3.', 'Set up your', <strong key="pen">Pension</strong>, '(contribution % and type). Choose', <em key="ss">Salary Sacrifice</em>, 'to save Tax + NI.'],
-                                ['4.', 'Add', <strong key="cb">Child Benefit</strong>, 'count if you claim it — TaxSense will watch for the HICBC trap.'],
-                                ['5.', '(Optional) Add', <strong key="rm">Recurring Modifiers</strong>, '— enhancements (bonuses, car allowance) and sacrifices (cycle to work, lease car).'],
-                                ['6.', 'View your', <strong key="th">monthly take-home pay</strong>, 'on the', <strong key="db">Dashboard</strong>, 'tab — income, deductions, tax breakdown per month.'],
-                                ['7.', 'Log', <strong key="ot">Overtime</strong>, ': go to Overtime tab → Add Entry → enter hours and multiplier (1.5x, 2x, etc).'],
-                                ['8.', 'Check', <strong key="ins">Dashboard Insights</strong>, 'for tax code advice, underpayment warnings, and your', <em key="s2s">Safe to Spend</em>, 'calculation.'],
-                            ].map((step, i) => (
-                                <div key={i} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.84rem', lineHeight: 1.55 }}>
-                                    <span style={{ color: 'var(--primary)', fontWeight: 700, minWidth: '1.4rem' }}>{step[0]}</span>
-                                    <span>{step.slice(1)}</span>
-                                </div>
-                            ))}
+            <Section icon={<ClipboardList size={17} />} title="Getting Started" badge="NEW USERS" openByDefault={true}>
+                <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+                    🏢 PAYE (Employed) Setup
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.5rem' }}>
+                    {[
+                        ['1.', 'Go to', <strong key="s">Settings →</strong>, 'enter your', <strong key="as">Annual Gross Salary</strong>, ',', <strong key="ch">Contracted Hours</strong>, ', and', <strong key="tc">Tax Code</strong>],
+                        ['2.', 'Select your', <strong key="sl">Student Loan Plans</strong>, '(if you have one) — Plans 1, 2, 4, 5, or Postgraduate'],
+                        ['3.', 'Set up your', <strong key="pen">Pension</strong>, '(contribution % and type). Choose', <em key="ss">Salary Sacrifice</em>, 'to save Tax + NI.'],
+                        ['4.', 'Add', <strong key="cb">Child Benefit</strong>, 'count if you claim it — TaxSense will watch for the HICBC trap.'],
+                        ['5.', '(Optional) Add', <strong key="rm">Recurring Modifiers</strong>, '— enhancements (bonuses, car allowance) and sacrifices (cycle to work, lease car).'],
+                        ['6.', 'View your', <strong key="th">monthly take-home pay</strong>, 'on the', <strong key="db">Dashboard</strong>, 'tab — income, deductions, tax breakdown per month.'],
+                        ['7.', 'Log', <strong key="ot">Overtime</strong>, ': go to Overtime tab → Add Entry → enter hours and multiplier (1.5x, 2x, etc).'],
+                        ['8.', 'Check', <strong key="ins">Dashboard Insights</strong>, 'for tax code advice, underpayment warnings, and your', <em key="s2s">Safe to Spend</em>, 'calculation.'],
+                    ].map((step, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.84rem', lineHeight: 1.55 }}>
+                            <span style={{ color: 'var(--primary)', fontWeight: 700, minWidth: '1.4rem' }}>{step[0]}</span>
+                            <span>{step.slice(1)}</span>
                         </div>
-                        <Tip>Start on the <strong>Dashboard</strong> after setup — it shows your projected monthly net pay immediately.</Tip>
-                    </div>
-                )}
+                    ))}
+                </div>
+                <Tip>Start on the <strong>Dashboard</strong> after setup — it shows your projected monthly net pay immediately.</Tip>
 
-                {workMode !== 'paye' && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
-                            💼 Self-Employed (Sole Trader) Setup
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                            {[
-                                ['1.', 'Go to', <strong key="s">Settings → Work Mode</strong>, 'and choose', <strong key="se">Self-Employed</strong>, 'or', <strong key="both">Both</strong>],
-                                ['2.', <strong key="inc">Add Income</strong>, '— Self-Employed tab → Income → Add Item → enter invoices with amounts and mark as paid/unpaid'],
-                                ['3.', <strong key="exp">Track Expenses</strong>, '— Expenses sub-tab → Add Item → choose category (office, travel, marketing, etc.) and enter costs'],
-                                ['4.', '📸', <strong key="rec">Snap Receipts</strong>, '— When adding an expense, tap', <strong key="cam">Take Photo</strong>, 'or', <strong key="lib">Select Photo</strong>, 'to attach receipt images'],
-                                ['5.', <strong key="ast">Add Assets</strong>, '— Assets sub-tab → add equipment, vehicles, or tools for Capital Allowances (AIA 100%, WDA 18%/6%)'],
-                                ['6.', <strong key="mil">Log Mileage</strong>, '— Mileage sub-tab → add business journeys. First 10,000 miles at 45p/mile, then 25p/mile.'],
-                                ['7.', '⚡ <strong>Power Pack</strong> — VAT threshold monitor, SIPP pension contributions (get 25% tax top-up), and more.'],
-                                ['8.', <strong key="sm">Check Summary</strong>, '— Summary sub-tab shows your estimated Self Assessment bill, profit, and NI.'],
-                                ['9.', 'Toggle', <strong key="ta">Trading Allowance</strong>, '(£1,000 flat deduction) on/off in the Self-Employed header to compare vs actual expenses.'],
-                            ].map((step, i) => (
-                                <div key={i} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.84rem', lineHeight: 1.55 }}>
-                                    <span style={{ color: 'var(--primary)', fontWeight: 700, minWidth: '1.4rem' }}>{step[0]}</span>
-                                    <span>{step.slice(1)}</span>
-                                </div>
-                            ))}
+                <h4 style={{ margin: '1.5rem 0 0.75rem', fontSize: '0.9rem', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+                    💼 Self-Employed (Sole Trader) Setup
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1rem' }}>
+                    {[
+                        ['1.', 'Go to', <strong key="s2">Settings → Work Mode</strong>, 'and choose', <strong key="se2">Self-Employed</strong>, 'or', <strong key="both2">Both</strong>],
+                        ['2.', <strong key="inc2">Add Income</strong>, '— Self-Employed tab → Income → Add Item → enter invoices with amounts and mark as paid/unpaid'],
+                        ['3.', <strong key="exp2">Track Expenses</strong>, '— Expenses sub-tab → Add Item → choose category (office, travel, marketing, etc.) and enter costs'],
+                        ['4.', '📸', <strong key="rec2">Snap Receipts</strong>, '— When adding an expense, tap', <strong key="cam2">Take Photo</strong>, 'or', <strong key="lib2">Select Photo</strong>, 'to attach receipt images'],
+                        ['5.', <strong key="ast2">Add Assets</strong>, '— Assets sub-tab → add equipment, vehicles, or tools for Capital Allowances (AIA 100%, WDA 18%/6%)'],
+                        ['6.', <strong key="mil2">Log Mileage</strong>, '— Mileage sub-tab → add business journeys. First 10,000 miles at 45p/mile, then 25p/mile.'],
+                        ['7.', '⚡ <strong>Power Pack</strong> — VAT threshold monitor, SIPP pension contributions (get 25% tax top-up), and more.'],
+                        ['8.', <strong key="sm2">Check Summary</strong>, '— Summary sub-tab shows your estimated Self Assessment bill, profit, and NI.'],
+                        ['9.', 'Toggle', <strong key="ta2">Trading Allowance</strong>, '(£1,000 flat deduction) on/off in the Self-Employed header to compare vs actual expenses.'],
+                    ].map((step, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.84rem', lineHeight: 1.55 }}>
+                            <span style={{ color: 'var(--primary)', fontWeight: 700, minWidth: '1.4rem' }}>{step[0]}</span>
+                            <span>{step.slice(1)}</span>
                         </div>
-                        <Tip>Keep receipts for <strong>everything</strong> — HMRC can ask for records going back 5 years.</Tip>
-                    </div>
-                )}
+                    ))}
+                </div>
+                <Tip>Keep receipts for <strong>everything</strong> — HMRC can ask for records going back 5 years.</Tip>
 
-                {workMode === 'both' && (
+                <div style={{ marginTop: '1.5rem' }}>
                     <Warn>
-                        <strong>Combined Income:</strong> Your PAYE salary fills your tax bands first. Self-Employed profit gets taxed at your next highest rate.
-                        Watch for the <strong>Personal Allowance Trap</strong> if combined income exceeds £100,000.
+                        <strong>Combined Income Warning:</strong> If you have both PAYE and Self-Employed income, your PAYE salary fills tax bands first. SE profit gets taxed at your next highest rate.
+                        Watch for the <strong>Personal Allowance Trap</strong> if combined income exceeds £100,000 — you lose £1 of allowance for every £2 over.
                     </Warn>
-                )}
+                </div>
 
                 <h4 style={{ margin: '1rem 0 0.75rem', fontSize: '0.9rem', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
                     💡 General Tips

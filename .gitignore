@@ -32,3 +32,4 @@ npm-debug.log*
 *.apk
 *.aab
 *.keystore
+taxsense-release.keystore

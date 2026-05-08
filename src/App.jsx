@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, LogOut, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, FileText, X, ChevronRight, CloudUpload, CloudDownload, AlertCircle } from 'lucide-react';
 import { calculateTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
-import { getProfiles, saveProfiles, deleteUserData, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
+import { getProfiles, saveProfiles, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
 import PurchaseService from './services/PurchaseService';
 import { Share } from '@capacitor/share';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell, PieChart, Pie, LineChart, Line } from 'recharts';
@@ -396,7 +396,7 @@ const LegalView = ({ type, onClose }) => {
     sections: [
       { h: '1. Information We Collect', p: 'TaxSense is a privacy-first application. Your financial data is stored securely and locally on your device. We do not collect, transmit, or store any personal information on external servers. We also collect anonymous diagnostic data to monitor app health.' },
       { h: '2. Third-Party Services', p: 'We use Apple RevenueCat to securely validate your App Store subscription purchases. We do not use Firebase or any cloud database. All your financial data remains on your device. We strictly do not sell your personal information.' },
-      { h: '3. Your Data Rights (GDPR/UK DPA)', p: 'You possess the right to access, rectify, or completely erase your personal data at any point using the "Delete Account" function in Settings, which permanently scrubs your data from your device.' },
+      { h: '3. Your Data Rights (GDPR/UK DPA)', p: 'You possess the right to access, rectify, or completely erase your personal data at any time by deleting the app. All data is stored locally on your device — uninstalling TaxSense permanently removes everything.' },
       { h: '4. Data Security', p: 'All transmissions utilize industry-standard encryption. However, because the fundamental architecture relies on local storage, you are ultimately responsible for securing your physical device.' },
       { h: '5. Contact', p: 'For any privacy inquiries, please contact our Data Protection Officer at analyticalresearchsystemseng@gmail.com.' }
     ]
@@ -883,31 +883,6 @@ function App() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!currentUser) return;
-    const confirm1 = window.confirm("Are you sure you want to delete your account? This will permanently erase ALL your tax data and cannot be undone.");
-    if (!confirm1) return;
-    const confirm2 = window.prompt("To confirm deletion, please type 'DELETE' below:");
-    if (confirm2 !== 'DELETE') return;
-
-    try {
-      setIsLoaded(false);
-      
-      // Delete all local data
-      await deleteUserData('local-user');
-      
-      // Clear local storage & state
-      localStorage.clear();
-      resetAllStates();
-      
-      alert("Account and data successfully deleted.");
-      window.location.reload();
-    } catch (e) {
-      console.error("Delete account error:", e);
-      alert("Failed to delete account. Please try again or contact support.");
-      setIsLoaded(true);
-    }
-  };
 
   // --- Backup & Restore Handlers ---
   const handleExportBackup = async () => {
@@ -1525,44 +1500,6 @@ function App() {
 
 
 
-  const exportGDPRData = async () => {
-    const data = {
-      version: '1.2.2',
-      exportDate: new Date().toISOString(),
-      taxYear,
-      workMode,
-      months,
-      seData,
-      leaseConfig,
-      mileageLogs
-    };
-    const safeYear = taxYear.split('/').join('-');
-    const filename = `taxsense_data_backup_${safeYear}.json`;
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-
-    // Try Share API first (Native Mobile)
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'application/json' })] })) {
-      try {
-        const file = new File([blob], filename, { type: 'application/json' });
-        await navigator.share({
-          files: [file],
-          title: 'TaxSense Data Export',
-          text: `GDPR Data Backup for ${taxYear}`
-        });
-        return;
-      } catch (err) {
-        console.log("Share failed, falling back to download", err);
-      }
-    }
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   const exportToCSV = async () => {
     // 1. Monthly Summary Section
@@ -2541,9 +2478,6 @@ function App() {
               </div>
 
               <div style={{ marginTop: '3rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-                <button onClick={exportGDPRData} className="btn-secondary" style={{ padding: '0.75rem 2rem' }}>
-                  <Download size={18} style={{ marginRight: '0.5rem' }} /> Download My Data (GDPR)
-                </button>
                 <button onClick={exportToCSV} className="btn-primary" style={{ padding: '0.75rem 2rem' }}>
                   <Download size={18} style={{ marginRight: '0.5rem' }} /> Export Year to CSV
                 </button>
@@ -2675,13 +2609,7 @@ function App() {
                       <FileText size={14} /> Terms of Service
                     </button>
                   </div>
-                  <div style={{ padding: '1.25rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '0.75rem', border: '1px solid rgba(239, 68, 68, 0.2)', marginTop: '0.5rem' }}>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#f87171', fontSize: '0.9rem' }}>Danger Zone</h4>
-                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', opacity: 0.7 }}>Permanently delete your account and all associated tax data from our servers.</p>
-                    <button onClick={handleDeleteAccount} className="btn-secondary" style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.3)', fontSize: '0.8rem' }}>
-                      Delete My Account
-                    </button>
-                  </div>
+
                 </div>
               </div>
             </div>

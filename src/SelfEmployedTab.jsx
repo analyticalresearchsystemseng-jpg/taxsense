@@ -212,6 +212,13 @@ export default function SelfEmployedTab({
 
     const handleTakePhoto = async () => {
         try {
+            // Check permission first
+            const perm = await CapacitorCamera.checkPermissions();
+            if (perm.camera === 'denied') {
+                alert('Camera access is needed to snap receipt photos.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Camera ON');
+                return;
+            }
+            
             const image = await CapacitorCamera.getPhoto({
                 quality: 70,
                 allowEditing: false,
@@ -225,12 +232,21 @@ export default function SelfEmployedTab({
             }
         } catch (e) {
             console.warn('Camera error:', e);
-            alert('Could not capture photo. Please check camera permissions in Settings.');
+            // Only show error if it's not a user cancel
+            if (e.message && !e.message.includes('cancel') && !e.message.includes('User cancelled')) {
+                alert('Camera access is needed to snap receipt photos.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Camera ON');
+            }
         }
     };
 
     const handleSelectPhoto = async () => {
         try {
+            const perm = await CapacitorCamera.checkPermissions();
+            if (perm.photos === 'denied') {
+                alert('Photo library access is needed to attach receipts.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Photos ON');
+                return;
+            }
+            
             const image = await CapacitorCamera.getPhoto({
                 quality: 70,
                 allowEditing: false,
@@ -244,7 +260,9 @@ export default function SelfEmployedTab({
             }
         } catch (e) {
             console.warn('Photo library error:', e);
-            alert('Could not select photo. Please check photo library permissions.');
+            if (e.message && !e.message.includes('cancel') && !e.message.includes('User cancelled')) {
+                alert('Photo library access is needed to attach receipts.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Photos ON');
+            }
         }
     };
 

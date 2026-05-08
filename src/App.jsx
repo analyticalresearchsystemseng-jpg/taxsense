@@ -3,6 +3,7 @@ import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Ca
 import { calculateTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
 import { getProfiles, saveProfiles, deleteUserData, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
 import PurchaseService from './services/PurchaseService';
+import { Share } from '@capacitor/share';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell, PieChart, Pie, LineChart, Line } from 'recharts';
 import AuthModal from './AuthModal';
 import SelfEmployedTab from './SelfEmployedTab';

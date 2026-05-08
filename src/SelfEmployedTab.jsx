@@ -215,7 +215,7 @@ export default function SelfEmployedTab({
             // Check permission first
             const perm = await CapacitorCamera.requestPermissions();
             if (perm.camera === 'denied') {
-                alert('Camera access is needed to snap receipt photos.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Camera ON');
+                alert('Camera access is needed to capture receipt photos.');
                 return;
             }
             
@@ -234,7 +234,7 @@ export default function SelfEmployedTab({
             console.warn('Camera error:', e);
             // Only show error if it's not a user cancel
             if (e.message && !e.message.includes('cancel') && !e.message.includes('User cancelled')) {
-                alert('Camera access is needed to snap receipt photos.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Camera ON');
+                alert('Camera access is needed to capture receipt photos.');
             }
         }
     };
@@ -243,7 +243,7 @@ export default function SelfEmployedTab({
         try {
             const perm = await CapacitorCamera.requestPermissions();
             if (perm.photos === 'denied') {
-                alert('Photo library access is needed to attach receipts.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Photos ON');
+                alert('Photo library access is needed to attach receipts.');
                 return;
             }
             
@@ -261,7 +261,7 @@ export default function SelfEmployedTab({
         } catch (e) {
             console.warn('Photo library error:', e);
             if (e.message && !e.message.includes('cancel') && !e.message.includes('User cancelled')) {
-                alert('Photo library access is needed to attach receipts.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Photos ON');
+                alert('Photo library access is needed to attach receipts.');
             }
         }
     };

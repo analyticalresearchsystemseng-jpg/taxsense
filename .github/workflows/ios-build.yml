@@ -46,6 +46,34 @@ jobs:
             exit 1
           fi
       
+      - name: Download Provisioning Profile
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          pip3 install -q PyJWT 2>/dev/null || true
+          
+          TOKEN=$(python3 -c "
+          import jwt, time
+          with open('/tmp/AuthKey.p8') as f: key = f.read()
+          token = jwt.encode({'iss': '$ASC_ISSUER_ID', 'iat': int(time.time()), 'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': '$ASC_KEY_ID', 'typ': 'JWT'})
+          print(token)
+          ")
+          
+          PROFILE=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://api.appstoreconnect.apple.com/v1/profiles?filter[name]=match%20AppStore%20uk.co.taxsense.app%201778177425")
+          PROFILE_ID=$(echo "$PROFILE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data'][0]['id'])")
+          
+          DETAIL=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://api.appstoreconnect.apple.com/v1/profiles/$PROFILE_ID")
+          PROFILE_B64=$(echo "$DETAIL" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['attributes']['profileContent'])")
+          PROFILE_UUID=$(echo "$DETAIL" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['attributes']['uuid'])")
+          
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          echo "$PROFILE_B64" | base64 -d > "$PROFILES_DIR/$PROFILE_UUID.mobileprovision"
+          echo "✅ Profile installed: $PROFILE_UUID"
+      
       - name: Archive (manual signing)
         run: |
           cd ios

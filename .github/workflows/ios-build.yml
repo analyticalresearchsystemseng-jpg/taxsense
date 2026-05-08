@@ -126,10 +126,15 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
           echo "=== Uploading IPA to TestFlight ==="
+          # Place key where altool expects it
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          
           xcrun altool --upload-app \
             --type ios \
             --file ios/build/export/App.ipa \
-            --apiKey "${{ secrets.ASC_KEY_ID }}" \
+            --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID"
           echo "✅ Uploaded to TestFlight"
       

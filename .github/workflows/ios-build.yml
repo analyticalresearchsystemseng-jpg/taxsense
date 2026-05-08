@@ -102,7 +102,12 @@ jobs:
               <key>signingStyle</key>
               <string>manual</string>
               <key>teamID</key>
-              <string>${{ secrets.ASC_TEAM_ID }}</string>
+              <string>M6BWMNZQ57</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>uk.co.taxsense.app</key>
+                  <string>73f4ccda-9b94-4edb-8fd8-cb2b725442bc</string>
+              </dict>
           </dict>
           </plist>
           PLIST

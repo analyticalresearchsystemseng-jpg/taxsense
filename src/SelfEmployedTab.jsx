@@ -213,7 +213,7 @@ export default function SelfEmployedTab({
     const handleTakePhoto = async () => {
         try {
             // Check permission first
-            const perm = await CapacitorCamera.checkPermissions();
+            const perm = await CapacitorCamera.requestPermissions();
             if (perm.camera === 'denied') {
                 alert('Camera access is needed to snap receipt photos.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Camera ON');
                 return;
@@ -241,7 +241,7 @@ export default function SelfEmployedTab({
 
     const handleSelectPhoto = async () => {
         try {
-            const perm = await CapacitorCamera.checkPermissions();
+            const perm = await CapacitorCamera.requestPermissions();
             if (perm.photos === 'denied') {
                 alert('Photo library access is needed to attach receipts.\n\nTo enable:\n1. Open iOS Settings\n2. Scroll to TaxSense\n3. Turn Photos ON');
                 return;

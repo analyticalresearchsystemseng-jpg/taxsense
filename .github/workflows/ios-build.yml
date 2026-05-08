@@ -26,6 +26,9 @@ jobs:
       - name: Sync to iOS
         run: npx cap sync ios
       
+      - name: Select Xcode 26
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer && xcodebuild -version
+      
       - name: Install CocoaPods dependencies
         run: |
           cd ios/App

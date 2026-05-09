@@ -9,8 +9,8 @@ export default function GettingStartedModal({ onClose, workMode }) {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'var(--bg-dark)',
-            zIndex: 9998,
+            background: 'rgba(15, 23, 42, 0.98)',
+            zIndex: 9999,
             overflow: 'auto',
             padding: '1rem'
         }}>

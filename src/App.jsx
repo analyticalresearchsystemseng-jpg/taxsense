@@ -9,6 +9,7 @@ import AuthModal from './AuthModal';
 import SelfEmployedTab from './SelfEmployedTab';
 import GuideTab from './GuideTab';
 import SetupWizard from './SetupWizard';
+import FullGuideModal from './FullGuideModal';
 import { calculateSEProfit, calculateMileageAllowance, calculateSelfAssessment } from './logic/SelfAssessmentCalculator';
 
 const MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
@@ -449,6 +450,7 @@ function App() {
   const [subscriptionTier, setSubscriptionTier] = useState('free'); // 'free' | 'annual' | 'monthly'
   const isPremium = subscriptionTier !== 'free';
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showFullGuide, setShowFullGuide] = useState(false);
   const [leaseConfig, setLeaseConfig] = useState({ startDate: '', termMonths: 36, totalAllowedMiles: 30000 });
   const [mileageLogs, setMileageLogs] = useState([]);
   const [chartKey, setChartKey] = useState(0);
@@ -2259,6 +2261,9 @@ function App() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Settings size={20} /> Annual Configuration</h2>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => setShowFullGuide(true)} className="btn-secondary" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <BookOpen size={16} /> Full Guide
+                    </button>
                     <button onClick={handleRestore} className="btn-secondary" style={{ fontSize: '0.8rem' }}>Restore Purchases</button>
                     <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="btn-secondary" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />} {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
@@ -3056,6 +3061,15 @@ function App() {
             {activeHelperText}
           </div>
         </div>
+      )}
+
+      {/* Full Guide Modal */}
+      {showFullGuide && (
+        <FullGuideModal 
+          onClose={() => setShowFullGuide(false)} 
+          taxYear={taxYear}
+          workMode={workMode}
+        />
       )}
 
       <footer style={{ textAlign: 'center', padding: '2rem 1rem', opacity: 0.3, fontSize: '0.7rem', borderTop: '1px solid var(--glass-border)', marginTop: '2rem' }}>

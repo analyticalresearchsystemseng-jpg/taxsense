@@ -12,7 +12,7 @@ export default function GettingStartedModal({ onClose, workMode }) {
             background: '#0f172a',
             zIndex: 9999,
             overflow: 'auto',
-            padding: '1rem'
+            padding: '2.5rem 1rem 1rem 1rem'
         }}>
             {/* Header */}
             <div style={{

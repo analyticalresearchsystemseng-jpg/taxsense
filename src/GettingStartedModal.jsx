@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ClipboardList, BookOpen } from 'lucide-react';
+import { X, ClipboardList } from 'lucide-react';
 
 export default function GettingStartedModal({ onClose, workMode }) {
     return (
@@ -9,7 +9,7 @@ export default function GettingStartedModal({ onClose, workMode }) {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(15, 23, 42, 0.98)',
+            background: '#0f172a',
             zIndex: 9999,
             overflow: 'auto',
             padding: '1rem'
@@ -18,7 +18,7 @@ export default function GettingStartedModal({ onClose, workMode }) {
             <div style={{
                 position: 'sticky',
                 top: 0,
-                background: 'var(--bg-dark)',
+                background: '#0f172a',
                 zIndex: 10,
                 padding: '1rem 0',
                 borderBottom: '1px solid var(--glass-border)',
@@ -26,7 +26,8 @@ export default function GettingStartedModal({ onClose, workMode }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
-            }}>
+            }}
+            >
                 <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem' }}>
                     <ClipboardList size={24} color="var(--primary)" /> Getting Started Guide
                 </h1>
@@ -54,15 +55,16 @@ export default function GettingStartedModal({ onClose, workMode }) {
                 <div style={{ 
                     marginBottom: '2rem', 
                     padding: '1.5rem', 
-                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%)',
+                    background: '#1e293b',
                     border: '1px solid rgba(99, 102, 241, 0.3)',
                     borderRadius: '0.75rem'
                 }}
                 >
                     <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', opacity: 0.7 }}>Quick walkthrough to set up your profile and start using TaxSense.</p>
+                    
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                         {/* PAYE Setup */}
-                        <div style={{ background: 'rgba(0,0,0,0.15)', padding: '1rem', borderRadius: '0.6rem' }}>
+                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.6rem', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: 'var(--primary)' }}>🏢 PAYE (Employed)</h4>
                             <div style={{ fontSize: '0.78rem', opacity: 0.85, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                 <div><strong>1.</strong> Enter your <strong>Annual Salary</strong>, <strong>Contracted Hours</strong>, and <strong>Tax Code</strong> below ↓</div>
@@ -76,7 +78,7 @@ export default function GettingStartedModal({ onClose, workMode }) {
                         </div>
                         
                         {/* SE Setup */}
-                        <div style={{ background: 'rgba(0,0,0,0.15)', padding: '1rem', borderRadius: '0.6rem' }}>
+                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.6rem', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: 'var(--primary)' }}>💼 Self-Employed</h4>
                             <div style={{ fontSize: '0.78rem', opacity: 0.85, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                 <div><strong>1.</strong> Set <strong>Work Mode</strong> to Self-Employed or Both</div>
@@ -91,7 +93,7 @@ export default function GettingStartedModal({ onClose, workMode }) {
                         </div>
                         
                         {/* General Tips */}
-                        <div style={{ background: 'rgba(0,0,0,0.15)', padding: '1rem', borderRadius: '0.6rem', gridColumn: '1 / -1' }}>
+                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.6rem', gridColumn: '1 / -1', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--primary)' }}>💡 Quick Tips</h4>
                             <div style={{ fontSize: '0.78rem', opacity: 0.85, lineHeight: 1.6, display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
                                 <span>📤 <strong>CSV Export</strong> — Overtime & SE data exportable</span>
@@ -103,7 +105,7 @@ export default function GettingStartedModal({ onClose, workMode }) {
                         </div>
                     </div>
 
-                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '0.5rem', fontSize: '0.78rem', color: '#fbbf24' }}>
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '0.5rem', fontSize: '0.78rem', color: '#fbbf24' }}>
                         ⚠️ <strong>Combined Income Warning:</strong> PAYE salary fills tax bands first. SE profit is taxed at your highest rate. Watch out for the £100k Personal Allowance trap.
                     </div>
                 </div>

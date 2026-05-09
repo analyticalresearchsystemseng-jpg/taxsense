@@ -75,7 +75,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(15, 23, 42, 0.98)',
+            background: '#0f172a',
             zIndex: 9999,
             overflow: 'auto',
             padding: '1rem'
@@ -84,7 +84,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
             <div style={{
                 position: 'sticky',
                 top: 0,
-                background: 'rgba(15, 23, 42, 0.98)',
+                background: '#0f172a',
                 zIndex: 10,
                 padding: '1rem 0',
                 borderBottom: '1px solid var(--glass-border)',

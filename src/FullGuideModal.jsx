@@ -4,26 +4,26 @@ import { X, BookOpen, Calculator, Calendar, Receipt, Car, Users, AlertTriangle, 
 const Section = ({ icon, title, badge, children }) => {
     const [open, setOpen] = React.useState(false);
     return (
-        <div style={{ marginBottom: '0.75rem', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', overflow: 'hidden' }}>
+        <div style={{ marginBottom: '0.75rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.75rem', overflow: 'hidden', background: '#1e293b' }}>
             <button
                 onClick={() => setOpen(!open)}
                 style={{
                     width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '1rem', background: open ? 'var(--primary-light)' : 'rgba(255,255,255,0.02)',
-                    border: 'none', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', gap: '0.75rem'
+                    padding: '1rem', background: open ? '#1e293b' : '#0f172a',
+                    border: 'none', color: '#e2e8f0', cursor: 'pointer', textAlign: 'left', gap: '0.75rem'
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1 }}>
-                    <span style={{ color: 'var(--primary)' }}>{icon}</span>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{title}</span>
+                    <span style={{ color: '#818cf8' }}>{icon}</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#e2e8f0' }}>{title}</span>
                     {badge && (
-                        <span style={{ fontSize: '0.65rem', background: 'var(--primary)', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '0.3rem', opacity: 0.8 }}>{badge}</span>
+                        <span style={{ fontSize: '0.65rem', background: '#6366f1', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '0.3rem' }}>{badge}</span>
                     )}
                 </div>
-                {open ? <ChevronRight size={16} opacity={0.5} style={{ transform: 'rotate(90deg)' }} /> : <ChevronRight size={16} opacity={0.5} />}
+                {open ? <ChevronRight size={16} color="#94a3b8" style={{ transform: 'rotate(90deg)' }} /> : <ChevronRight size={16} color="#94a3b8" />}
             </button>
             {open && (
-                <div style={{ padding: '1rem 1.1rem 1.1rem', fontSize: '0.87rem', lineHeight: 1.65, color: 'var(--text-main)', opacity: 0.9, borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.05)' }}>
+                <div style={{ padding: '1rem 1.1rem 1.1rem', fontSize: '0.87rem', lineHeight: 1.65, color: '#cbd5e1', borderTop: '1px solid rgba(255,255,255,0.1)', background: '#0f172a' }}>
                     {children}
                 </div>
             )}
@@ -32,7 +32,7 @@ const Section = ({ icon, title, badge, children }) => {
 };
 
 const Link = ({ href, children }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+    <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#818cf8', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
         {children} <ExternalLink size={11} />
     </a>
 );
@@ -41,9 +41,9 @@ const Table = ({ rows }) => (
     <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.75rem', fontSize: '0.83rem' }}>
         <tbody>
             {rows.map(([a, b], i) => (
-                <tr key={i} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                    <td style={{ padding: '0.4rem 0.5rem', opacity: 0.6, whiteSpace: 'nowrap', color: 'var(--text-main)' }}>{a}</td>
-                    <td style={{ padding: '0.4rem 0.5rem', fontWeight: 600, color: 'var(--text-main)' }}>{b}</td>
+                <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <td style={{ padding: '0.4rem 0.5rem', whiteSpace: 'nowrap', color: '#94a3b8' }}>{a}</td>
+                    <td style={{ padding: '0.4rem 0.5rem', fontWeight: 600, color: '#e2e8f0' }}>{b}</td>
                 </tr>
             ))}
         </tbody>
@@ -51,13 +51,13 @@ const Table = ({ rows }) => (
 );
 
 const Tip = ({ children }) => (
-    <div style={{ background: 'var(--primary-light)', border: '1px solid var(--primary)', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', marginTop: '0.75rem', fontSize: '0.82rem', color: 'var(--text-main)' }}>
+    <div style={{ background: '#1e293b', border: '1px solid #6366f1', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', marginTop: '0.75rem', fontSize: '0.82rem', color: '#cbd5e1' }}>
         💡 {children}
     </div>
 );
 
 const Warn = ({ children }) => (
-    <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', marginTop: '0.75rem', fontSize: '0.82rem', color: '#fbbf24' }}>
+    <div style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', marginTop: '0.75rem', fontSize: '0.82rem', color: '#fbbf24' }}>
         ⚠️ {children}
     </div>
 );
@@ -87,24 +87,23 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
                 background: '#0f172a',
                 zIndex: 10,
                 padding: '1rem 0',
-                borderBottom: '1px solid var(--glass-border)',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
                 marginBottom: '1rem',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
             }}>
-                <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem' }}>
-                    <BookOpen size={24} color="var(--primary)" /> TaxSense Complete Guide
+                <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem', color: '#e2e8f0' }}>
+                    <BookOpen size={24} color="#818cf8" /> TaxSense Complete Guide
                 </h1>
                 <button 
                     onClick={onClose}
-                    className="btn-icon"
                     style={{
-                        background: 'var(--primary-light)',
-                        border: '1px solid var(--primary)',
+                        background: 'rgba(99, 102, 241, 0.2)',
+                        border: '1px solid #6366f1',
                         borderRadius: '0.5rem',
-                        padding: '0.5rem',
-                        color: 'var(--primary)',
+                        padding: '0.5rem 0.75rem',
+                        color: '#e2e8f0',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -118,8 +117,8 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
             <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: '3rem' }}>
                 {/* Intro */}
-                <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <div className="glass-card" style={{ marginBottom: '1.5rem', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.75rem', padding: '1.25rem' }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.6, color: '#cbd5e1' }}>
                         Welcome to the complete TaxSense guide. This covers everything you need to know about UK tax, 
                         Self Assessment, PAYE, and how to get the most out of this app. Tap any section to expand it.
                     </p>
@@ -127,18 +126,18 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === QUICK START === */}
                 <Section icon={<TrendingUp size={17} />} title="Quick Start — Getting Started">
-                    <p><strong>Step 1:</strong> Go to Settings and select your Work Mode (PAYE, Self-Employed, or Both).</p>
-                    <p style={{ marginTop: '0.5rem' }}><strong>Step 2:</strong> Enter your basic details — salary, tax code, contracted hours.</p>
-                    <p style={{ marginTop: '0.5rem' }}><strong>Step 3:</strong> Add any recurring enhancements or sacrifices (car allowance, pension, etc.).</p>
-                    <p style={{ marginTop: '0.5rem' }}><strong>Step 4:</strong> Log your monthly income and overtime in the Dashboard.</p>
-                    <p style={{ marginTop: '0.5rem' }}><strong>Step 5:</strong> Check the Stats tab for year-end projections and tax breakdowns.</p>
+                    <p style={{color: '#cbd5e1'}}><strong style={{color: '#e2e8f0'}}>Step 1:</strong> Go to Settings and select your Work Mode (PAYE, Self-Employed, or Both).</p>
+                    <p style={{ marginTop: '0.5rem', color: '#cbd5e1' }}><strong style={{color: '#e2e8f0'}}>Step 2:</strong> Enter your basic details — salary, tax code, contracted hours.</p>
+                    <p style={{ marginTop: '0.5rem', color: '#cbd5e1' }}><strong style={{color: '#e2e8f0'}}>Step 3:</strong> Add any recurring enhancements or sacrifices (car allowance, pension, etc.).</p>
+                    <p style={{ marginTop: '0.5rem', color: '#cbd5e1' }}><strong style={{color: '#e2e8f0'}}>Step 4:</strong> Log your monthly income and overtime in the Dashboard.</p>
+                    <p style={{ marginTop: '0.5rem', color: '#cbd5e1' }}><strong style={{color: '#e2e8f0'}}>Step 5:</strong> Check the Stats tab for year-end projections and tax breakdowns.</p>
                     <Tip>If you're self-employed, use the SE tab to log invoices, expenses, and mileage.</Tip>
                 </Section>
 
                 {/* === SELF ASSESSMENT === */}
                 <Section icon={<Calculator size={17} />} title="What is Self Assessment?" badge={workMode !== 'paye' ? 'SE' : null}>
-                    <p>Self Assessment (SA) is how HMRC collects tax from people whose income isn't fully taxed at source. If you're self-employed, a company director, or have income over £100,000, you must file a tax return each year.</p>
-                    <p style={{ marginTop: '0.75rem' }}>You tell HMRC what you earned, they work out what you owe, and you pay it — usually all at once in January.</p>
+                    <p style={{color: '#cbd5e1'}}>Self Assessment (SA) is how HMRC collects tax from people whose income isn't fully taxed at source. If you're self-employed, a company director, or have income over £100,000, you must file a tax return each year.</p>
+                    <p style={{ marginTop: '0.75rem', color: '#cbd5e1' }}>You tell HMRC what you earned, they work out what you owe, and you pay it — usually all at once in January.</p>
                     <Table rows={[
                         ['Register by', '5 October after the tax year ends'],
                         ['Online filing deadline', onlineFiling],
@@ -164,8 +163,8 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === TRADING ALLOWANCE === */}
                 <Section icon={<Receipt size={17} />} title="Trading Allowance" badge="SE">
-                    <p>The Trading Allowance is a £1,000 tax-free amount for self-employed income. If your total self-employed income is under £1,000 for the year, you don't even need to report it to HMRC.</p>
-                    <p style={{ marginTop: '0.75rem' }}>If your income is <strong>over £1,000</strong>, you have a choice each year:</p>
+                    <p style={{color: '#cbd5e1'}}>The Trading Allowance is a £1,000 tax-free amount for self-employed income. If your total self-employed income is under £1,000 for the year, you don't even need to report it to HMRC.</p>
+                    <p style={{ marginTop: '0.75rem', color: '#cbd5e1' }}>If your income is <strong style={{color: '#e2e8f0'}}>over £1,000</strong>, you have a choice each year:</p>
                     <Table rows={[
                         ['Option A — Trading Allowance', 'Deduct a flat £1,000. Simple, no receipts needed.'],
                         ['Option B — Actual Expenses', 'Deduct what you actually spent (requires records).'],
@@ -176,20 +175,20 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === PAYMENTS ON ACCOUNT === */}
                 <Section icon={<Calendar size={17} />} title="Payments on Account" badge="SE">
-                    <p>If your Self Assessment bill is over <strong>£1,000</strong>, HMRC requires you to make advance payments toward <em>next</em> year's estimated bill — these are called Payments on Account.</p>
-                    <p style={{ marginTop: '0.75rem' }}>Each payment is <strong>50% of your current bill</strong>.</p>
+                    <p style={{color: '#cbd5e1'}}>If your Self Assessment bill is over <strong style={{color: '#e2e8f0'}}>£1,000</strong>, HMRC requires you to make advance payments toward <em>next</em> year's estimated bill — these are called Payments on Account.</p>
+                    <p style={{ marginTop: '0.75rem', color: '#cbd5e1' }}>Each payment is <strong style={{color: '#e2e8f0'}}>50% of your current bill</strong>.</p>
                     <Table rows={[
                         ['1st Payment on Account', `31 January ${startYear + 2} (same day as your bill!)`],
                         ['2nd Payment on Account', `31 July ${startYear + 2}`],
                         ['Balancing payment', `31 January ${startYear + 3} (actual bill minus PoA paid)`],
                     ]} />
-                    <Warn><strong>Year 1 shock:</strong> In your first year, you owe your full bill PLUS 50% advance in January — potentially 150% of your tax bill in one payment. Budget early.</Warn>
+                    <Warn><strong style={{color: '#e2e8f0'}}>Year 1 shock:</strong> In your first year, you owe your full bill PLUS 50% advance in January — potentially 150% of your tax bill in one payment. Budget early.</Warn>
                     <Tip>If your income drops significantly, you can apply to HMRC to reduce your Payments on Account. Don't just ignore them — they still charge interest if you underpay.</Tip>
                 </Section>
 
                 {/* === ALLOWABLE EXPENSES === */}
                 <Section icon={<Receipt size={17} />} title="Allowable Expenses" badge="SE">
-                    <p>You can deduct allowable business expenses from your income to reduce your taxable profit. Keep receipts for everything.</p>
+                    <p style={{color: '#cbd5e1'}}>You can deduct allowable business expenses from your income to reduce your taxable profit. Keep receipts for everything.</p>
                     <Table rows={[
                         ['✅ Office costs', 'Stationery, ink, printer paper, software'],
                         ['✅ Travel', 'Business journeys (not commuting), hotels on work trips'],
@@ -206,7 +205,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === MILEAGE === */}
                 <Section icon={<Car size={17} />} title="Mileage Rules" badge="SE">
-                    <p>Instead of claiming actual vehicle costs (fuel, insurance, repairs), most sole traders use the HMRC Approved Mileage Rate — it's simpler and often more generous.</p>
+                    <p style={{color: '#cbd5e1'}}>Instead of claiming actual vehicle costs (fuel, insurance, repairs), most sole traders use the HMRC Approved Mileage Rate — it's simpler and often more generous.</p>
                     <Table rows={[
                         ['First 10,000 miles', '45p per mile'],
                         ['Over 10,000 miles', '25p per mile'],
@@ -219,7 +218,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === CLASS 2 & 4 NI === */}
                 <Section icon={<Calculator size={17} />} title="Class 2 & Class 4 NI" badge="SE">
-                    <p>As a sole trader you don't pay the usual Class 1 NI (that's for employees). Instead you pay two types via your Self Assessment return:</p>
+                    <p style={{color: '#cbd5e1'}}>As a sole trader you don't pay the usual Class 1 NI (that's for employees). Instead you pay two types via your Self Assessment return:</p>
                     <Table rows={[
                         ['Class 2 NI', '£3.45/week if profit > £12,570 (2025/26)'],
                         ['Class 2 credits', 'Profit between £6,725-£12,570: no payment but NI credit given'],
@@ -232,7 +231,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
                 {/* === PAYE + SE COMBINED === */}
                 {workMode === 'both' && (
                     <Section icon={<Users size={17} />} title="PAYE + Self-Employed Combined" badge="Important">
-                        <p>HMRC taxes your <strong>total income from all sources</strong>. Your PAYE salary and self-employed profit are added together for income tax purposes.</p>
+                        <p style={{color: '#cbd5e1'}}>HMRC taxes your <strong style={{color: '#e2e8f0'}}>total income from all sources</strong>. Your PAYE salary and self-employed profit are added together for income tax purposes.</p>
                         <Table rows={[
                             ['Band stacking', 'Your PAYE salary fills tax bands first. SE profit is taxed at the next rate up.'],
                             ['Personal Allowance', 'Your employer already uses your full £12,570 allowance via PAYE — SE profit is often taxed from £0.'],
@@ -246,20 +245,20 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === VAT === */}
                 <Section icon={<Calculator size={17} />} title="VAT" badge="SE">
-                    <p>VAT (Value Added Tax) is charged at 20% on most goods and services in the UK. You may only need to worry about VAT if your turnover is high.</p>
+                    <p style={{color: '#cbd5e1'}}>VAT (Value Added Tax) is charged at 20% on most goods and services in the UK. You may only need to worry about VAT if your turnover is high.</p>
                     <Table rows={[
                         ['Registration threshold', '£90,000 turnover in any 12-month period (2024/25+)'],
                         ['Voluntary registration', 'You can register even below the threshold — useful if clients are VAT registered'],
                         ['Standard rate', '20% on most goods and services'],
-                        ['Zero rate', '0% on food, children\'s clothing, books'],
-                        ['VAT returns', 'Usually quarterly, filed via HMRC\'s Making Tax Digital (MTD) service'],
+                        ['Zero rate', "0% on food, children's clothing, books"],
+                        ['VAT returns', "Usually quarterly, filed via HMRC's Making Tax Digital (MTD) service"],
                     ]} />
                     <Warn>HMRC checks your turnover on a rolling 12-month basis. If you hit £90k at any point in any 12-month period, you must register within 30 days.</Warn>
                 </Section>
 
                 {/* === TAX CODES === */}
                 <Section icon={<FileText size={17} />} title="Understanding Tax Codes" badge="PAYE">
-                    <p>Your tax code tells your employer how much tax-free income you get. The most common code is <strong>1257L</strong>:</p>
+                    <p style={{color: '#cbd5e1'}}>Your tax code tells your employer how much tax-free income you get. The most common code is <strong style={{color: '#e2e8f0'}}>1257L</strong>:</p>
                     <Table rows={[
                         ['1257L', 'Standard code — £12,570 tax-free allowance, spread evenly'],
                         ['1257L W1/M1', 'Week 1/Month 1 — emergency code, no cumulative calculation'],
@@ -273,7 +272,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === STUDENT LOANS === */}
                 <Section icon={<Landmark size={17} />} title="Student Loan Repayments" badge="PAYE">
-                    <p>Student loan repayments are taken automatically via PAYE if you're on Plan 1, 2, 4, or 5. Postgraduate loans (PGL) are separate.</p>
+                    <p style={{color: '#cbd5e1'}}>Student loan repayments are taken automatically via PAYE if you're on Plan 1, 2, 4, or 5. Postgraduate loans (PGL) are separate.</p>
                     <Table rows={[
                         ['Plan 1', '9% on earnings above £24,360 (2025/26)'],
                         ['Plan 2', '9% on earnings above £27,660 (2025/26)'],
@@ -286,8 +285,8 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === £100K TAX TRAP === */}
                 <Section icon={<AlertTriangle size={17} />} title="The £100K Tax Trap" badge="Important">
-                    <p>When your income hits £100,000, your <strong>Personal Allowance starts disappearing</strong>. For every £2 you earn over £100k, you lose £1 of allowance.</p>
-                    <p style={{ marginTop: '0.75rem' }}>At £125,140, your entire £12,570 allowance is gone. This creates an effective <strong>60% tax rate</strong> between £100k and £125k.</p>
+                    <p style={{color: '#cbd5e1'}}>When your income hits £100,000, your <strong style={{color: '#e2e8f0'}}>Personal Allowance starts disappearing</strong>. For every £2 you earn over £100k, you lose £1 of allowance.</p>
+                    <p style={{ marginTop: '0.75rem', color: '#cbd5e1' }}>At £125,140, your entire £12,570 allowance is gone. This creates an effective <strong style={{color: '#e2e8f0'}}>60% tax rate</strong> between £100k and £125k.</p>
                     <Table rows={[
                         ['£100,000', 'Full £12,570 allowance intact'],
                         ['£110,000', '£7,570 allowance left — effective rate ~57%'],
@@ -298,7 +297,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === PENSION CONTRIBUTIONS === */}
                 <Section icon={<Landmark size={17} />} title="Pension Contributions" badge="PAYE">
-                    <p>Pension contributions reduce your taxable income. There are two main ways they work:</p>
+                    <p style={{color: '#cbd5e1'}}>Pension contributions reduce your taxable income. There are two main ways they work:</p>
                     <Table rows={[
                         ['Relief at Source', 'You contribute from net pay, HMRC adds 20% basic rate relief automatically. Higher-rate taxpayers claim extra via tax return.'],
                         ['Salary Sacrifice', 'You agree to reduce gross salary. Employer pays the difference into pension. Saves Tax + NI.'],
@@ -308,20 +307,20 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === CHILD BENEFIT CHARGE === */}
                 <Section icon={<Users size={17} />} title="Child Benefit High Income Charge (HICBC)">
-                    <p>If you or your partner earn over <strong>£60,000</strong> and you claim Child Benefit, you may have to pay some or all of it back via the High Income Child Benefit Charge.</p>
+                    <p style={{color: '#cbd5e1'}}>If you or your partner earn over <strong style={{color: '#e2e8f0'}}>£60,000</strong> and you claim Child Benefit, you may have to pay some or all of it back via the High Income Child Benefit Charge.</p>
                     <Table rows={[
                         ['£60,000 or below', 'Full child benefit, no charge'],
                         ['£60,001 - £79,999', '1% charge per £100 over £60k — partial clawback'],
                         ['£80,000 or above', '100% charge — all benefit clawed back'],
                     ]} />
-                    <Warn>The charge is based on the <strong>highest earner's income</strong> in the household, not combined income. If you're the higher earner at £70k and your partner earns £20k, you still pay the charge.</Warn>
+                    <Warn>The charge is based on the <strong style={{color: '#e2e8f0'}}>highest earner's income</strong> in the household, not combined income. If you're the higher earner at £70k and your partner earns £20k, you still pay the charge.</Warn>
                     <Tip>You can opt out of Child Benefit to avoid the charge, but it's often better to keep claiming (protects NI credits for the stay-at-home parent) and just pay the charge via tax return.</Tip>
                 </Section>
 
                 {/* === OVERTIME CALCULATIONS === */}
                 <Section icon={<Briefcase size={17} />} title="Overtime & Holiday Supplement" badge="PAYE">
-                    <p>The app calculates your overtime true hourly rate by:</p>
-                    <ol style={{ paddingLeft: '1.2rem', marginTop: '0.5rem' }}>
+                    <p style={{color: '#cbd5e1'}}>The app calculates your overtime true hourly rate by:</p>
+                    <ol style={{ paddingLeft: '1.2rem', marginTop: '0.5rem', color: '#cbd5e1' }}>
                         <li>Taking your annual salary and dividing by contracted hours × 52 weeks</li>
                         <li>Multiplying by your overtime multiplier (1.5x, 2.0x, etc.)</li>
                         <li>Adding holiday supplement % if applicable (Rolled Up Holiday Pay)</li>
@@ -331,7 +330,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === EXPORTING DATA === */}
                 <Section icon={<FileText size={17} />} title="Exporting Your Data">
-                    <p>TaxSense lets you export your data in multiple ways:</p>
+                    <p style={{color: '#cbd5e1'}}>TaxSense lets you export your data in multiple ways:</p>
                     <Table rows={[
                         ['CSV Export', 'Full year data — monthly income, overtime, deductions, summaries'],
                         ['GDPR Export', 'All your personal data in JSON format — everything stored in the app'],
@@ -371,18 +370,28 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
                 </Section>
 
                 {/* Disclaimer */}
-                <div style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.72rem', opacity: 0.35, lineHeight: 1.6, padding: '0 1rem' }}>
-                    This guide is for <strong>general informational purposes only</strong>. It does not constitute financial, legal, or professional tax advice. Tax rules are complex and change regularly — always verify calculations and rules with HMRC or a qualified professional for your specific personal situation.
+                <div style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.72rem', color: '#64748b', lineHeight: 1.6, padding: '0 1rem' }}>
+                    This guide is for <strong style={{color: '#94a3b8'}}>general informational purposes only</strong>. It does not constitute financial, legal, or professional tax advice. Tax rules are complex and change regularly — always verify calculations and rules with HMRC or a qualified professional for your specific personal situation.
                 </div>
 
                 {/* Close button at bottom */}
                 <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                     <button 
                         onClick={onClose}
-                        className="btn-primary"
-                        style={{ padding: '0.75rem 2rem' }}
+                        style={{
+                            background: 'rgba(99, 102, 241, 0.2)',
+                            border: '1px solid #6366f1',
+                            borderRadius: '0.5rem',
+                            padding: '0.75rem 2rem',
+                            color: '#e2e8f0',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}
                     >
-                        <X size={18} style={{ marginRight: '0.5rem' }} /> Close Guide
+                        <X size={18} /> Close Guide
                     </button>
                 </div>
             </div>

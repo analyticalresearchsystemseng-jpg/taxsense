@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
-import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, LogOut, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, ClipboardList, X, ChevronRight, CloudUpload, CloudDownload, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, ClipboardList, X, ChevronRight, CloudUpload, CloudDownload, AlertCircle } from 'lucide-react';
 import { calculateTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
 import { getProfiles, saveProfiles, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
 import PurchaseService from './services/PurchaseService';
 import { Share } from '@capacitor/share';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell, PieChart, Pie, LineChart, Line } from 'recharts';
-import AuthModal from './AuthModal';
 import SelfEmployedTab from './SelfEmployedTab';
 import GuideTab from './GuideTab';
 import SetupWizard from './SetupWizard';
@@ -396,7 +395,6 @@ const AnalyticsTab = ({
 function App() {
   // --- Core Lifecycle & Auth State ---
   const [isLoaded, setIsLoaded] = useState(false);
-  const [currentUser, setCurrentUser] = useState({ uid: 'local-user', isLocal: true }); // Local-only mode, no auth needed
   const [profiles, setProfiles] = useState({});
   const isBootingRef = useRef(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
@@ -816,26 +814,6 @@ function App() {
     initLocal();
   }, [DEFAULT_PROFILE, applyProfile]); 
 
-  const handleLogout = async () => {
-    try {
-      // 1. Immediately block any further saves
-      setIsLoaded(false); 
-      
-      // 2. Sign out of RevenueCat only (no Firebase)
-      await PurchaseService.logOut();
-      
-      // 3. Clear all local state
-      resetAllStates();
-      localStorage.clear();
-      
-      // 4. Force reload for a perfectly clean slate
-      window.location.href = window.location.origin; 
-    } catch (e) {
-      console.error("Logout error", e);
-      window.location.reload();
-    }
-  };
-
 
   // --- Backup & Restore Handlers ---
   const handleExportBackup = async () => {
@@ -948,7 +926,7 @@ function App() {
     }, 2000); // 2s debounce for stability
 
     return () => clearTimeout(timeoutIdx);
-  }, [taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months, workMode, seData, hasCompletedTour, isLoaded, currentUser, taxYear, leaseConfig, mileageLogs, profiles]);
+  }, [taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months, workMode, seData, hasCompletedTour, isLoaded, taxYear, leaseConfig, mileageLogs, profiles]);
 
   // Switch Year Handler
   const handleYearSwitch = (newYear) => {
@@ -2105,7 +2083,7 @@ function App() {
             payeANI={analyticsData.projections.taxableIncome}
             payeIncomeTaxPaid={analyticsData.projections.incomeTax}
             taxCode={taxCode}
-            currentUser={currentUser}
+            
             subscriptionTier={subscriptionTier}
             setShowPremiumModal={setShowPremiumModal}
             onUpgrade={handleUpgrade}
@@ -2623,25 +2601,9 @@ function App() {
             <ShieldCheck size={14} color="var(--success)" /> UK Tax Year {taxYear} - Professional Grade
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--input-bg)', padding: '0.5rem 1rem', borderRadius: '2rem', border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Local User</span>
-            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
-            <button
-              onClick={handleLogout}
-              title="Sign Out"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#fca5a5',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem',
-                padding: 0
-              }}
-            >
-              <LogOut size={14} /> Sign Out
-            </button>
           </div>
         </footer>
       </main>
-
       <nav className="nav-bar">
         <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
           <LayoutDashboard size={20} />

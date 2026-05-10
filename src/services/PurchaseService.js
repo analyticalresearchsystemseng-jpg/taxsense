@@ -6,14 +6,14 @@ const USE_REAL_PAYMENTS = true; // Toggle this to true for final App Store submi
 class PurchaseService {
     constructor() {
         this.isInitialized = false;
-        this.mockMode = true; // Default to true until we have a real key and are on a device
+        this.mockMode = false; // Real payments - mock mode disabled
     }
 
     async initialize() {
         if (this.isInitialized) return;
 
         try {
-            // Check if we are running on a real device, have a key, and REAL payments are enabled
+            // Check if we are running on a real device and have a real key
             if (USE_REAL_PAYMENTS && REVENUECAT_API_KEY !== 'REPLACE_WITH_YOUR_KEY' && (window.Capacitor?.getPlatform() === 'ios' || window.Capacitor?.getPlatform() === 'android')) {
                 await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
                 await Purchases.configure({ apiKey: REVENUECAT_API_KEY });

@@ -1,0 +1,12 @@
+{
+  "product_hunt": {
+    "platform": "Product Hunt",
+    "email": "neil.ross@agentmail.to",
+    "status": "blocked_sso_only",
+    "verification_email_received": false,
+    "verification_link": null,
+    "blocker": "Product Hunt does not support email/password signup. Only SSO authentication is available via LinkedIn, GitHub, or X/Twitter. No email signup option exists in the signup modal.",
+    "page_text_summary": "Subscribe\nSign in\nThe best products in your inbox\nProduct Hunt has been putting viral products and superb memes in email inboxes since 2013.\nSign up and you'll always have something cool to share with your friends.\nSign me up\nWant to sponsor a newsletter?\nFind out more\nSee for yourself\nGreat products have a story behind them. We'll connect the dots and make it make sense.\nThe Leaderboard\nMAY 8TH, 2026\nYC is watching you\n\ngm legends, happy Friday.\n\n\n\n\n77 builders launched this morning for a shot at YC S26 \u2014 Gustaf Alstr\u00f6mer is reviewing the top ones on the special leaderboard; one wants to replace the resume with your GitHub commits; one breaks AI agents on purpose before users do; and forum founders are sharing their wildest launch horror stories.\n\nTop Launches:\nFlowMarket\nClaude Agents for Financial Services\nMESA\nMAY 7TH, 2026\nThird ChatGPT default this year\n\ngm legends, happy Thursday.\n\n\n\n\nLuma's new reasoning model says it understands what you want before it generates anything; reMa",
+    "timestamp": "2026-05-11T07:42:06Z"
+  }
+}

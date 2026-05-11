@@ -105,7 +105,7 @@ export default function SetupWizard({
                 { icon: '📊', text: 'See your full-year tax forecast' },
                 { icon: '🔔', text: 'Get alerts for tax traps and underpayments' },
               ].map((item, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid var(--glass-border)', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                <div key={i} style={{ background: 'var(--glass-bg)', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid var(--glass-border)', fontSize: '0.78rem', lineHeight: 1.5, color: 'var(--text-main)' }}>
                   <div style={{ fontSize: '1.3rem', marginBottom: '0.3rem' }}>{item.icon}</div>
                   {item.text}
                 </div>

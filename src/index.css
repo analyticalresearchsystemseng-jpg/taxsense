@@ -45,8 +45,7 @@
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg-gradient);
-  background-attachment: fixed;
+  background: var(--bg-dark);
   color: var(--text-main);
   min-height: 100vh;
 }
@@ -57,7 +56,6 @@ body {
   flex-direction: column;
   padding-top: env(safe-area-inset-top);
   background: var(--bg-gradient);
-  background-attachment: fixed;
 }
 
 

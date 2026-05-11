@@ -486,7 +486,7 @@ function App() {
     months: Array(12).fill(null).map(() => ({ income: [], overtime: [], deductions: [] })),
     workMode: 'paye',
     seData: { months: Array(12).fill(null).map(() => ({ invoices: [], expenses: [], mileage: [] })), assets: [], sippContributions: [], vatRegistered: false, useTradingAllowance: false },
-    hasCompletedTour: false,
+    hasCompletedTour: true,
     leaseConfig: { startDate: '', termMonths: 36, totalAllowedMiles: 30000 },
     mileageLogs: [],
     subscriptionTier: 'free'
@@ -1558,7 +1558,7 @@ function App() {
 
   return (
     <>
-      {!hasCompletedTour && (
+      {false && (
         <SetupWizard
           workMode={workMode} setWorkMode={setWorkMode}
           baseSalary={baseSalary} setBaseSalary={setBaseSalary}

@@ -45,9 +45,10 @@
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg-dark);
+  background: var(--bg-gradient);
   color: var(--text-main);
   min-height: 100vh;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-container {
@@ -60,9 +61,18 @@ body {
 
 
 #root {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-gradient);
+}
+
+@media (min-width: 769px) {
+  #root {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
 }
 
 .glass-card {
@@ -207,7 +217,7 @@ select option {
 
 @media (max-width: 768px) {
   #root {
-    padding: 1rem;
+    padding: 0;
     padding-bottom: 7rem;
   }
 

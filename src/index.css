@@ -55,7 +55,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-top: env(safe-area-inset-top);
+  padding: env(safe-area-inset-top) 1rem 0;
   background: var(--bg-gradient);
 }
 
@@ -217,8 +217,8 @@ select option {
 
 @media (max-width: 768px) {
   #root {
-    padding: 0;
-    padding-bottom: 7rem;
+    padding: 0 0.5rem;
+    padding-bottom: 8rem;
   }
 
   .dashboard-grid {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
-import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, ClipboardList, X, ChevronRight, CloudUpload, CloudDownload, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, ClipboardList, X, ChevronRight, ChevronDown, CloudUpload, CloudDownload, AlertCircle } from 'lucide-react';
 import { calculateTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
 import { getProfiles, saveProfiles, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
 import PurchaseService from './services/PurchaseService';
@@ -403,6 +403,7 @@ function App() {
   // --- UI State ---
   const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, overtime, config
   const [otFilterClaimed, setOtFilterClaimed] = useState('all'); // all, claimed, unclaimed
+  const [showClaimedOT, setShowClaimedOT] = useState(false); // collapsed by default
   const [otFilterMonth, setOtFilterMonth] = useState('all');
   const [sourceYearForCopy, setSourceYearForCopy] = useState('2024/25');
   const [targetYearForCopy, setTargetYearForCopy] = useState('2025/26');
@@ -2142,13 +2143,17 @@ function App() {
             </div>
 
             <div className="overtime-list">
-              {filteredOT.map(o => (
-                <div key={o.id} className="overtime-line glass-card clickable" style={{ borderLeft: o.claimed ? '4px solid var(--success)' : '4px solid var(--error)', marginBottom: '1rem', padding: '1rem' }} onClick={() => { setOtModalData({ id: o.id, date: o.date || '', hours: o.hours, multiplier: o.multiplier, reason: o.reason || '', monthIdx: o.monthIdx, originalMonthIdx: o.monthIdx }); setShowOtModal(true); }}>
+              {/* Unclaimed overtime — always visible */}
+              {filteredOT.filter(o => !o.claimed).map(o => (
+                <div key={o.id} className="overtime-line glass-card clickable" style={{ borderLeft: '4px solid var(--error)', marginBottom: '1rem', padding: '1rem' }} onClick={() => { setOtModalData({ id: o.id, date: o.date || '', hours: o.hours, multiplier: o.multiplier, reason: o.reason || '', monthIdx: o.monthIdx, originalMonthIdx: o.monthIdx }); setShowOtModal(true); }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <button className="btn-icon" onClick={(e) => { e.stopPropagation(); updateMonthItem(o.monthIdx, 'overtime', o.id, 'claimed', !o.claimed); }}>
-                        {o.claimed ? <CheckSquare size={20} color="var(--success)" /> : <Square size={20} opacity={0.4} />}
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
+                        <button className="btn-icon" onClick={(e) => { e.stopPropagation(); updateMonthItem(o.monthIdx, 'overtime', o.id, 'claimed', !o.claimed); }} title="Tick once you've claimed this overtime">
+                          <Square size={20} opacity={0.4} />
+                        </button>
+                        <span style={{ fontSize: '0.6rem', opacity: 0.5, lineHeight: 1 }}>Mark as<br/>claimed</span>
+                      </div>
                       <div>
                         <div style={{ fontWeight: 'bold' }}>{o.hours}h @ {o.multiplier}x</div>
                         <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>
@@ -2165,6 +2170,66 @@ function App() {
                   {o.reason && <div style={{ fontSize: '0.85rem', padding: '0.5rem', background: 'rgba(0,0,0,0.1)', borderRadius: '0.4rem', marginTop: '0.5rem', borderLeft: '2px solid rgba(255,255,255,0.05)' }}>{o.reason}</div>}
                 </div>
               ))}
+
+              {/* Claimed overtime — collapsible */}
+              {(() => {
+                const claimed = filteredOT.filter(o => o.claimed);
+                if (claimed.length === 0) return null;
+                const claimedTotal = claimed.reduce((s, o) => s + calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier), 0);
+                return (
+                  <>
+                    <button
+                      onClick={() => setShowClaimedOT(!showClaimedOT)}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.75rem 1rem',
+                        marginBottom: showClaimedOT ? '0.5rem' : '1rem',
+                        background: 'rgba(34, 197, 94, 0.1)',
+                        border: '1px solid rgba(34, 197, 94, 0.25)',
+                        borderRadius: '0.75rem',
+                        color: 'var(--text-main)',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: 500
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <CheckSquare size={16} color="var(--success)" />
+                        Claimed Overtime ({claimed.length})
+                        <span style={{ opacity: 0.6, fontWeight: 400 }}>— £{claimedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </span>
+                      <ChevronDown size={16} style={{ transform: showClaimedOT ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                    </button>
+                    {showClaimedOT && claimed.map(o => (
+                      <div key={o.id} className="overtime-line glass-card clickable" style={{ borderLeft: '4px solid var(--success)', marginBottom: '1rem', padding: '1rem', opacity: 0.7 }} onClick={() => { setOtModalData({ id: o.id, date: o.date || '', hours: o.hours, multiplier: o.multiplier, reason: o.reason || '', monthIdx: o.monthIdx, originalMonthIdx: o.monthIdx }); setShowOtModal(true); }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                            <button className="btn-icon" onClick={(e) => { e.stopPropagation(); updateMonthItem(o.monthIdx, 'overtime', o.id, 'claimed', !o.claimed); }} title="Unmark as claimed">
+                              <CheckSquare size={20} color="var(--success)" />
+                            </button>
+                            <div>
+                              <div style={{ fontWeight: 'bold' }}>{o.hours}h @ {o.multiplier}x</div>
+                              <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>
+                                {o.date} • {MONTHS[o.monthIdx]}
+                                <span style={{ marginLeft: '0.5rem', opacity: 0.7 }}>#OT-{String(o.id).slice(-6)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--success)' }}>£{calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <button className="btn-icon" style={{ color: 'var(--error)', marginLeft: 'auto' }} onClick={(e) => { e.stopPropagation(); removeMonthItem(o.monthIdx, 'overtime', o.id); }}><Trash2 size={16} /></button>
+                          </div>
+                        </div>
+                        {o.reason && <div style={{ fontSize: '0.85rem', padding: '0.5rem', background: 'rgba(0,0,0,0.1)', borderRadius: '0.4rem', marginTop: '0.5rem', borderLeft: '2px solid rgba(255,255,255,0.05)' }}>{o.reason}</div>}
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
+
               {filteredOT.length === 0 && <p style={{ textAlign: 'center', opacity: 0.4, padding: '2rem 0' }}>No overtime logged.</p>}
               <div style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem' }}>
                 <button onClick={exportUnclaimedOT} className="btn-secondary" style={{ fontSize: '0.75rem', padding: '0.5rem 1rem' }}>

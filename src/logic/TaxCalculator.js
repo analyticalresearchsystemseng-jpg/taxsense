@@ -194,10 +194,12 @@ export const projectAnnual = (monthsActualData, futureBaseData, currentMonthInde
     let ytdSacrifice = 0;
     let ytdNetDeductions = 0;
     let ytdTaxFree = 0;
+    let ytdBik = 0;
 
     for (let i = 0; i <= currentMonthIndex; i++) {
         const m = monthsActualData[i];
         ytdGross += m.gross;
+        ytdBik += (m.bik || 0);
 
         if (!options.omitAllPension) {
             ytdPension += m.pension;
@@ -226,6 +228,7 @@ export const projectAnnual = (monthsActualData, futureBaseData, currentMonthInde
 
         ytdNetDeductions += (futureBaseData.netSacrifice * remaining);
         ytdTaxFree += (futureBaseData.taxFree * remaining);
+        ytdBik += ((futureBaseData.bik || 0) * remaining);
     }
 
     const taxResults = calculateTax(ytdGross, ytdPension, ytdSacrifice, taxCode, ytdNetDeductions, options);
@@ -233,7 +236,8 @@ export const projectAnnual = (monthsActualData, futureBaseData, currentMonthInde
     return {
         ...taxResults,
         projectedTaxFree: round(ytdTaxFree),
-        finalTakeHome: round(taxResults.annualTakeHome + ytdTaxFree)
+        totalBik: round(ytdBik),
+        finalTakeHome: round(taxResults.annualTakeHome + ytdTaxFree - ytdBik)
     };
 };
 

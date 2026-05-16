@@ -410,7 +410,7 @@ function App() {
   const [showOtModal, setShowOtModal] = useState(false);
   const [otModalData, setOtModalData] = useState({ monthIdx: 0, hours: '', multiplier: 1.5, reason: '', date: new Date().toISOString().split('T')[0] });
   const [showBaseModifierModal, setShowBaseModifierModal] = useState(false);
-  const [baseModifierModalData, setBaseModifierModalData] = useState({ id: null, type: 'enhancement', name: '', amount: '', frequency: 'annual', sacrificeType: 'salary_sacrifice', includeInPension: false });
+  const [baseModifierModalData, setBaseModifierModalData] = useState({ id: null, type: 'enhancement', name: '', amount: '', frequency: 'annual', sacrificeType: 'salary_sacrifice', includeInPension: false, enhancementType: 'income' });
 
   // --- Persistent State ---
   const [taxCode, setTaxCode] = useState('1257L');
@@ -993,14 +993,16 @@ function App() {
   const futureBaseData = useMemo(() => {
     const monthlyBaseSalary = (sandboxMode && sandboxSalary !== null ? sandboxSalary : baseSalary) / 12;
     const baseEnhancementMonthly = baseEnhancements.reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
+    const baseBikMonthly = baseEnhancements.filter(e => e.enhancementType === 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
     const grossBaseSacrificeMonthly = baseSacrifices.filter(d => d.type !== 'net_sacrifice').reduce((s, d) => s + getMonthlyValue(d.amount, d.frequency), 0) + (sandboxMode && sandboxSacrifice !== null ? sandboxSacrifice / 12 : 0);
     const netBaseSacrificeMonthly = baseSacrifices.filter(d => d.type === 'net_sacrifice').reduce((s, d) => s + getMonthlyValue(d.amount, d.frequency), 0);
 
-    const grossForPension = monthlyBaseSalary + baseEnhancements.filter(e => e.includeInPension).reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
+    const grossForPension = monthlyBaseSalary + baseEnhancements.filter(e => e.includeInPension && e.enhancementType !== 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
     const pension = grossForPension * ((sandboxMode && sandboxPension !== null ? sandboxPension : pensionPercent) / 100);
 
     return {
       gross: monthlyBaseSalary + baseEnhancementMonthly + (sandboxMode && sandboxOvertime !== null ? sandboxOvertime / 12 : 0),
+      bik: baseBikMonthly,
       pension: pension,
       grossSacrifice: grossBaseSacrificeMonthly,
       netSacrifice: netBaseSacrificeMonthly,
@@ -1025,13 +1027,14 @@ function App() {
       const varGrossIncome = (m.income || []).reduce((s, i) => s + (Number(i.amount) || 0), 0) + (m.deductions || []).filter(d => d.type === 'income').reduce((s, d) => s + (Number(d.amount) || 0), 0) + holidaySupplementAmount;
 
       const baseEnhancementMonthlyTotal = (baseEnhancements || []).reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
-      const totalMonthlyGrossForPension = monthlyBaseSalary + (baseEnhancements || []).filter(e => e.includeInPension).reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
+      const baseBikMonthlyTotal = (baseEnhancements || []).filter(e => e.enhancementType === 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
+      const totalMonthlyGrossForPension = monthlyBaseSalary + (baseEnhancements || []).filter(e => e.includeInPension && e.enhancementType !== 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
       const pension = totalMonthlyGrossForPension * ((sandboxMode && sandboxPension !== null ? sandboxPension : pensionPercent) / 100);
 
       const varTaxFree = (m.deductions || []).filter(d => d.type === 'tax_free').reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
       // Map recurring items into specific lines
-      const mappedEnhancements = (baseEnhancements || []).map(e => ({ name: e.name || 'Enhancement', amount: getMonthlyValue(e.amount, e.frequency) }));
+      const mappedEnhancements = (baseEnhancements || []).map(e => ({ name: e.name || 'Enhancement', amount: getMonthlyValue(e.amount, e.frequency), enhancementType: e.enhancementType || 'income' }));
       const mappedSacrifices = (baseSacrifices || []).map(s => ({ name: s.name || 'Sacrifice', amount: getMonthlyValue(s.amount, s.frequency), type: s.type }));
 
       // Add sandbox sacrifice if exists
@@ -1048,6 +1051,7 @@ function App() {
         month: MONTHS[monthIdx] || 'Month',
         monthIdx: monthIdx,
         gross: monthlyBaseSalary + baseEnhancementMonthlyTotal + otTotal + varGrossIncome,
+        bik: baseBikMonthlyTotal,
         ot: otTotal,
         ot15,
         ot20,
@@ -1206,7 +1210,8 @@ function App() {
     // Marriage Allowance
     // isMarriageAllowanceLikely removed as it was unused and causing lint errors
 
-    const isCodeMismatch = taxCode.toUpperCase().trim() !== recommendedCode.toUpperCase().trim();
+    const isKCode = taxCode.toUpperCase().trim().startsWith('K');
+    const isCodeMismatch = !isKCode && taxCode.toUpperCase().trim() !== recommendedCode.toUpperCase().trim();
 
     // Final result adjustments for SE-only mode
     const finalProjections = { ...currentProjected };
@@ -1228,12 +1233,14 @@ function App() {
       seSipp,
       seGiftAid,
       totalTaxNI: currentProjected.totalTaxNI + seSABill,
-      totalTakeHome: currentProjected.annualTakeHome + seProfitAmt - seSABill + currentProjected.projectedTaxFree,
+      totalTakeHome: currentProjected.finalTakeHome + seProfitAmt - seSABill,
+      totalBik: currentProjected.totalBik || 0,
       sacrificeItemsSavings,
       payeUnderpayment,
       totalMonthlyTaxPot,
       isMarriageAllowanceLikely: (currentProjected.gross + seProfitAmt) > 12570 && (currentProjected.gross + seProfitAmt) < 50270,
       isCodeMismatch,
+      isKCode,
       recommendedCode,
       ssTaxSaved,
       ssNiSaved,
@@ -1802,11 +1809,11 @@ function App() {
         {activeTab === 'dashboard' && (
           <div className="dashboard-grid">
             {/* Universal Advisor Card - Conditional based on mismatch/underpayment OR SE income OR Personal Allowance Trap */}
-            {(analyticsData.isCodeMismatch || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0 || (analyticsData.projections.taxableIncome + analyticsData.seProfit > 100000)) && (
+            {(analyticsData.isCodeMismatch || analyticsData.isKCode || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0 || (analyticsData.projections.taxableIncome + analyticsData.seProfit > 100000)) && (
               <div className="glass-card" id="tour-advisor" style={{ gridColumn: '1 / -1', border: '1px solid var(--primary)', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0) 100%)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: (analyticsData.isCodeMismatch || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0 || (analyticsData.projections.taxableIncome + analyticsData.seProfit > 100000)) ? 'repeat(auto-fit, minmax(280px, 1fr))' : '1fr', gap: '2rem' }}>
-                  {/* Tax Pot Advisor - Only if mismatch/underpayment OR SE income */}
-                  {(analyticsData.isCodeMismatch || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0) && (
+                <div style={{ display: 'grid', gridTemplateColumns: (analyticsData.isCodeMismatch || analyticsData.isKCode || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0 || (analyticsData.projections.taxableIncome + analyticsData.seProfit > 100000)) ? 'repeat(auto-fit, minmax(280px, 1fr))' : '1fr', gap: '2rem' }}>
+                  {/* Tax Pot Advisor - Only if mismatch/K-code/underpayment OR SE income */}
+                  {(analyticsData.isCodeMismatch || analyticsData.isKCode || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0) && (
                     <div>
                       <h3 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', color: 'var(--primary)' }}>
                         <ShieldCheck size={20} /> Smart Tax Pot Projection
@@ -1824,11 +1831,20 @@ function App() {
                     </div>
                   )}
 
-                  <div style={{ borderLeft: (analyticsData.isCodeMismatch || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0) ? '1px solid rgba(255,255,255,0.1)' : 'none', paddingLeft: (analyticsData.isCodeMismatch || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0) ? '1rem' : '0' }}>
+                  <div style={{ borderLeft: (analyticsData.isCodeMismatch || analyticsData.isKCode || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0) ? '1px solid rgba(255,255,255,0.1)' : 'none', paddingLeft: (analyticsData.isCodeMismatch || analyticsData.isKCode || analyticsData.payeUnderpayment > 50 || analyticsData.seSABill > 0) ? '1rem' : '0' }}>
                     <h3 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', color: 'var(--primary)' }}>
                       <AlertTriangle size={20} /> Tax Insights
                     </h3>
-                    {analyticsData.payeUnderpayment > 50 || analyticsData.isCodeMismatch ? (
+                    {analyticsData.isKCode ? (
+                      <div>
+                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#f59e0b' }}>
+                          ℹ️ <strong>K Tax Code Detected</strong>: Your code <strong>{taxCode}</strong> means HMRC has <strong>reduced your tax-free allowance</strong> because you owe tax from a previous year or benefit in kind. This is <strong>not an error</strong> — do not change to a standard code without checking with HMRC first.
+                        </p>
+                        <p style={{ margin: '0', fontSize: '0.75rem', opacity: 0.7 }}>
+                          K codes add unpaid tax to your income rather than giving you an allowance. Your take-home will be lower because HMRC is collecting what you owe through PAYE. The calculation above accounts for this correctly.
+                        </p>
+                      </div>
+                    ) : analyticsData.payeUnderpayment > 50 || analyticsData.isCodeMismatch ? (
                       <div>
                         <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: 'var(--error)' }}>
                           ⚠️ <strong>Tax Code Variance</strong>: Your code <strong>{taxCode}</strong> {analyticsData.isCodeMismatch ? `differs from standard ${analyticsData.recommendedCode}` : `is mathematically under-taxing you by ~£${analyticsData.payeUnderpayment.toLocaleString()} per year`}.
@@ -1858,8 +1874,8 @@ function App() {
                 <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', opacity: 0.45, textTransform: 'uppercase', marginBottom: '0.6rem' }}>Payments</div>
                 {currentMonthFull.incomeItems.filter(i => Number(i.amount) !== 0).map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
-                    <span style={{ opacity: 0.75 }}>{item.name}</span>
-                    <span style={{ color: 'var(--success)', fontWeight: 500 }}>+£{Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span style={{ opacity: 0.75 }}>{item.name}{item.enhancementType === 'bik' ? <span style={{ marginLeft: '0.4rem', fontSize: '0.6rem', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 600 }}>BiK</span> : null}</span>
+                    <span style={{ color: item.enhancementType === 'bik' ? '#f59e0b' : 'var(--success)', fontWeight: 500 }}>{item.enhancementType === 'bik' ? '≈' : '+'}£{Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 ))}
                 {currentMonthFull.rawMonthsActual.income.filter(i => Number(i.amount) !== 0).map((item, idx) => (
@@ -1897,6 +1913,16 @@ function App() {
                   <span style={{ color: 'var(--success)', fontWeight: 500 }}>+£{((sandboxMode && sandboxSalary !== null ? sandboxSalary : baseSalary) / 12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
+
+              {/* BiK NOTE */}
+              {analyticsData.totalBik > 0 && (
+                <div style={{ margin: '0.5rem 0 1rem 0', padding: '0.75rem', background: 'rgba(245, 158, 11, 0.08)', borderRadius: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#f59e0b', fontWeight: 600, marginBottom: '0.25rem' }}>⚠️ Benefit in Kind Impact</div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.7, lineHeight: '1.4' }}>
+                    BiK items add £{analyticsData.totalBik.toLocaleString()} to your taxable income but do NOT increase your take-home pay. You're taxed on the benefit value but the employer pays for the benefit directly.
+                  </div>
+                </div>
+              )}
 
               {/* GROSS SACRIFICE / PRE-TAX DEDUCTION LINES */}
               {(currentMonthFull.deductionItems.filter(d => d.type === 'salary_sacrifice' && Number(d.amount) !== 0).length > 0 || currentMonthFull.rawMonthsActual.deductions.filter(d => d.type === 'salary_sacrifice' && Number(d.amount) !== 0).length > 0 || (pensionType === 'salary_sacrifice' && monthlyPension > 0)) && (
@@ -2326,7 +2352,7 @@ function App() {
                       <div><label className="stat-label">Contracted Hours (wk)</label> <HelperInfo id="contractedHours" activeId={activeHelperId} setActiveId={setActiveHelperId} setActiveText={setActiveHelperText} text="Average weekly hours from your contract. This is used to calculate your 'true' hourly rate for overtime calculations." /><input type="number" value={contractedHours} onChange={(e) => handleNumericInput(e.target.value, setContractedHours)} className="input-field" /></div>
                     </>
                   )}
-                  <div><label className="stat-label">Tax Code</label> <HelperInfo id="taxCode" activeId={activeHelperId} setActiveId={setActiveHelperId} setActiveText={setActiveHelperText} text="Found on your payslip (e.g., 1257L). This determines your tax-free allowance. K-codes mean you have less allowance due to prior debt." /><input value={taxCode} onChange={(e) => setTaxCode(e.target.value)} className="input-field" /></div>
+                  <div><label className="stat-label">Tax Code</label> <HelperInfo id="taxCode" activeId={activeHelperId} setActiveId={setActiveHelperId} setActiveText={setActiveHelperText} text="Found on your payslip (e.g., 1257L). This determines your tax-free allowance. K codes (e.g., K100) mean HMRC has reduced your allowance to collect tax you owe — do not change a K code to a standard code without contacting HMRC first." /><input value={taxCode} onChange={(e) => setTaxCode(e.target.value)} className="input-field" /></div>
                 </div>
               </div>
 
@@ -2405,7 +2431,7 @@ function App() {
                           alert("Free Version Limit: 1 recurring enhancement. Upgrade to TaxSense Pro to add more.");
                           setShowPremiumModal(true); return;
                         }
-                        setBaseModifierModalData({ id: null, type: 'enhancement', name: '', amount: '', frequency: 'annual', sacrificeType: 'salary_sacrifice', includeInPension: false });
+                        setBaseModifierModalData({ id: null, type: 'enhancement', name: '', amount: '', frequency: 'annual', sacrificeType: 'salary_sacrifice', includeInPension: false, enhancementType: 'income' });
                         setShowBaseModifierModal(true);
                       }} title="Add Enhancement">
                         <Plus size={16} />
@@ -2413,7 +2439,7 @@ function App() {
                     </div>
                     {baseEnhancements.map(e => (
                       <div key={e.id} className="overtime-line glass-card clickable" style={{ borderLeft: '4px solid var(--success)', marginBottom: '0.75rem', padding: '0.75rem', cursor: 'pointer' }} onClick={() => {
-                        setBaseModifierModalData({ id: e.id, type: 'enhancement', name: e.name, amount: e.amount, frequency: e.frequency || 'monthly', sacrificeType: e.type || 'income', includeInPension: e.includeInPension || false });
+                        setBaseModifierModalData({ id: e.id, type: 'enhancement', name: e.name, amount: e.amount, frequency: e.frequency || 'monthly', sacrificeType: e.type || 'income', includeInPension: e.includeInPension || false, enhancementType: e.enhancementType || e.type || 'income' });
                         setShowBaseModifierModal(true);
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2753,6 +2779,41 @@ function App() {
                 )}
                 {baseModifierModalData.type === 'enhancement' && (
                   <div style={{ marginTop: '1rem' }}>
+                    <label className="stat-label">Enhancement Type</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                      <div 
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: baseModifierModalData.enhancementType !== 'bik' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${baseModifierModalData.enhancementType !== 'bik' ? '#10b981' : 'transparent'}`, borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                        onClick={() => setBaseModifierModalData({ ...baseModifierModalData, enhancementType: 'income' })}
+                      >
+                        <div style={{ color: baseModifierModalData.enhancementType !== 'bik' ? '#10b981' : 'var(--text-muted)' }}>
+                          {baseModifierModalData.enhancementType !== 'bik' ? <CheckSquare size={18} /> : <Square size={18} />}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Income</div>
+                          <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>Increases take-home pay</div>
+                        </div>
+                      </div>
+                      <div 
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: baseModifierModalData.enhancementType === 'bik' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${baseModifierModalData.enhancementType === 'bik' ? '#f59e0b' : 'transparent'}`, borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                        onClick={() => setBaseModifierModalData({ ...baseModifierModalData, enhancementType: 'bik' })}
+                      >
+                        <div style={{ color: baseModifierModalData.enhancementType === 'bik' ? '#f59e0b' : 'var(--text-muted)' }}>
+                          {baseModifierModalData.enhancementType === 'bik' ? <CheckSquare size={18} /> : <Square size={18} />}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Benefit in Kind</div>
+                          <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>Taxable, not in take-home</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.65rem', opacity: 0.5, marginTop: '0.75rem', lineHeight: '1.4' }}>
+                      <strong>Income:</strong> Car allowance, bonus, overtime uplift — increases your gross pay and take-home.<br/>
+                      <strong>Benefit in Kind:</strong> Private healthcare, company car, life insurance — adds to taxable income but does NOT increase take-home pay. The employer pays the benefit, but you're taxed on it.
+                    </div>
+                  </div>
+                )}
+                {baseModifierModalData.type === 'enhancement' && (
+                  <div style={{ marginTop: '1rem' }}>
                     <label className="stat-label">Pension Contribution Rule</label>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
                       <div 
@@ -2806,7 +2867,8 @@ function App() {
                       amount: Number(baseModifierModalData.amount) || 0,
                       frequency: baseModifierModalData.frequency,
                       includeInPension: baseModifierModalData.includeInPension,
-                      type: baseModifierModalData.type === 'sacrifice' ? baseModifierModalData.sacrificeType : 'income'
+                      type: baseModifierModalData.type === 'sacrifice' ? baseModifierModalData.sacrificeType : (baseModifierModalData.enhancementType || 'income'),
+                      enhancementType: baseModifierModalData.type === 'enhancement' ? (baseModifierModalData.enhancementType || 'income') : undefined
                     };
 
                     if (baseModifierModalData.type === 'enhancement') {

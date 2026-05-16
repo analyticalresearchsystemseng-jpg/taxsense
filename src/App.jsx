@@ -2090,6 +2090,9 @@ function App() {
                   <span className="stat-label" style={{ margin: 0 }}>Estimated Net Pay:</span>
                   <strong style={{ fontSize: '1.5rem', color: 'var(--success)' }}>£{totalMonthlyNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
+                {monthlyBik > 0 && (
+                  <div style={{ fontSize: '0.7rem', opacity: 0.5, marginTop: '0.25rem' }}>DEBUG: gross={monthlyGross.toFixed(2)}, bik={monthlyBik.toFixed(2)}, takeHome={monthlyResultsAnnualized.annualTakeHome.toFixed(2)}, net={totalMonthlyNet.toFixed(2)}</div>
+                )}
               </div>
             </div>
 

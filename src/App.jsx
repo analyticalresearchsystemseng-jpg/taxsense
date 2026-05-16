@@ -968,12 +968,15 @@ function App() {
   };
 
   const handleRestore = async () => {
-    const status = await PurchaseService.restorePurchases();
-    setSubscriptionTier(status);
-    if (status !== 'free') {
-      alert('Purchases restored successfully!');
-    } else {
-      alert('No active subscriptions found to restore.');
+    // Never downgrade — only upgrade if a purchase is found
+    try {
+      const status = await PurchaseService.restorePurchases();
+      if (status && status !== 'free') {
+        setSubscriptionTier(status);
+      }
+      // If status is 'free', do nothing — don't downgrade an existing paid user
+    } catch (e) {
+      console.error('Restore purchases error (ignored):', e);
     }
   };
 
@@ -2279,7 +2282,6 @@ function App() {
                     <button onClick={() => setShowFullGuide(true)} className="btn-secondary" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       <BookOpen size={16} /> Full Guide
                     </button>
-                    <button onClick={handleRestore} className="btn-secondary" style={{ fontSize: '0.8rem' }}>Restore Purchases</button>
                     <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="btn-secondary" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />} {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                     </button>

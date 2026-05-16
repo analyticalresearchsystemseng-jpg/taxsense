@@ -2313,10 +2313,10 @@ function App() {
                   {workMode !== 'se' && (
                     <>
                       <div><label className="stat-label">Annual Salary (£)</label> <HelperInfo id="baseSalary" activeId={activeHelperId} setActiveId={setActiveHelperId} setActiveText={setActiveHelperText} text="Your total annual gross pay before any deductions. Refer to your P60 or employment contract for this figure." /><input type="number" value={baseSalary} onChange={(e) => handleNumericInput(e.target.value, setBaseSalary)} className="input-field" /></div>
-                      <div><label className="stat-label">Contracted Hours (wk)</label> <HelperInfo id="contractedHours" activeId={activeHelperId} setActiveId={activeHelperId} setActiveText={setActiveHelperText} text="Average weekly hours from your contract. This is used to calculate your 'true' hourly rate for overtime calculations." /><input type="number" value={contractedHours} onChange={(e) => handleNumericInput(e.target.value, setContractedHours)} className="input-field" /></div>
+                      <div><label className="stat-label">Contracted Hours (wk)</label> <HelperInfo id="contractedHours" activeId={activeHelperId} setActiveId={setActiveHelperId} setActiveText={setActiveHelperText} text="Average weekly hours from your contract. This is used to calculate your 'true' hourly rate for overtime calculations." /><input type="number" value={contractedHours} onChange={(e) => handleNumericInput(e.target.value, setContractedHours)} className="input-field" /></div>
                     </>
                   )}
-                  <div><label className="stat-label">Tax Code</label> <HelperInfo id="taxCode" activeId={activeHelperId} setActiveId={activeHelperId} setActiveText={setActiveHelperText} text="Found on your payslip (e.g., 1257L). This determines your tax-free allowance. K-codes mean you have less allowance due to prior debt." /><input value={taxCode} onChange={(e) => setTaxCode(e.target.value)} className="input-field" /></div>
+                  <div><label className="stat-label">Tax Code</label> <HelperInfo id="taxCode" activeId={activeHelperId} setActiveId={setActiveHelperId} setActiveText={setActiveHelperText} text="Found on your payslip (e.g., 1257L). This determines your tax-free allowance. K-codes mean you have less allowance due to prior debt." /><input value={taxCode} onChange={(e) => setTaxCode(e.target.value)} className="input-field" /></div>
                 </div>
               </div>
 

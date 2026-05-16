@@ -1328,7 +1328,8 @@ function App() {
   const totalStatutory = (monthlyResultsAnnualized.incomeTax / 12) + (monthlyResultsAnnualized.ni / 12) + (monthlyResultsAnnualized.studentLoan / 12) + (monthlyResultsAnnualized.hicbc / 12) + (pensionType !== 'salary_sacrifice' ? monthlyPension : 0);
   const totalPostTax = monthlyNetSacrifice;
 
-  const totalMonthlyNet = (monthlyResultsAnnualized.annualTakeHome / 12) + currentMonthFull.taxFree;
+  const monthlyBik = currentMonthFull.bik || 0;
+  const totalMonthlyNet = (monthlyResultsAnnualized.annualTakeHome / 12) + currentMonthFull.taxFree - monthlyBik;
 
   /* const chartData = [
     { name: 'Net Pay', value: monthlyResultsAnnualized.annualTakeHome / 12, color: 'var(--success)' },

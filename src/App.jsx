@@ -2789,8 +2789,8 @@ function App() {
                           {baseModifierModalData.enhancementType !== 'bik' ? <CheckSquare size={18} /> : <Square size={18} />}
                         </div>
                         <div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Income</div>
-                          <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>Increases take-home pay</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>Income</div>
+                          <div style={{ fontSize: '0.75rem', opacity: 0.65 }}>Increases take-home pay</div>
                         </div>
                       </div>
                       <div 
@@ -2801,12 +2801,12 @@ function App() {
                           {baseModifierModalData.enhancementType === 'bik' ? <CheckSquare size={18} /> : <Square size={18} />}
                         </div>
                         <div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Benefit in Kind</div>
-                          <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>Taxable, not in take-home</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>Benefit in Kind</div>
+                          <div style={{ fontSize: '0.75rem', opacity: 0.65 }}>Taxable, not in take-home</div>
                         </div>
                       </div>
                     </div>
-                    <div style={{ fontSize: '0.65rem', opacity: 0.5, marginTop: '0.75rem', lineHeight: '1.4' }}>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.65, marginTop: '0.75rem', lineHeight: '1.5' }}>
                       <strong>Income:</strong> Car allowance, bonus, overtime uplift — increases your gross pay and take-home.<br/>
                       <strong>Benefit in Kind:</strong> Private healthcare, company car, life insurance — adds to taxable income but does NOT increase take-home pay. The employer pays the benefit, but you're taxed on it.
                     </div>

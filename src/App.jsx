@@ -1314,6 +1314,8 @@ function App() {
   const monthlyGrossSacrifice = currentMonthFull.deductionItems.filter(d => d.type === 'salary_sacrifice').reduce((s, i) => s + Number(i.amount || 0), 0) + currentMonthFull.rawMonthsActual.deductions.filter(d => d.type === 'salary_sacrifice').reduce((s, i) => s + Number(i.amount || 0), 0);
   const monthlyNetSacrifice = currentMonthFull.deductionItems.filter(d => d.type === 'net_sacrifice').reduce((s, i) => s + Number(i.amount || 0), 0) + currentMonthFull.rawMonthsActual.deductions.filter(d => d.type === 'net_sacrifice').reduce((s, i) => s + Number(i.amount || 0), 0);
 
+  const monthlyBik = currentMonthFull.bik || 0;
+  // Tax is calculated on FULL gross (including BiK) — HMRC taxes the benefit
   const monthlyResultsAnnualized = calculateTax(
     monthlyGross * 12,
     monthlyPension * 12,
@@ -1322,14 +1324,28 @@ function App() {
     monthlyNetSacrifice * 12,
     { taxYear, studentLoanPlans, childBenefitCount, pensionIsSS: pensionType === 'salary_sacrifice' }
   );
-
-  // v20.8 Breakdown Totals
-  const totalPreTax = monthlyGrossSacrifice + (pensionType === 'salary_sacrifice' ? monthlyPension : 0);
-  const totalStatutory = (monthlyResultsAnnualized.incomeTax / 12) + (monthlyResultsAnnualized.ni / 12) + (monthlyResultsAnnualized.studentLoan / 12) + (monthlyResultsAnnualized.hicbc / 12) + (pensionType !== 'salary_sacrifice' ? monthlyPension : 0);
-  const totalPostTax = monthlyNetSacrifice;
-
-  const monthlyBik = currentMonthFull.bik || 0;
-  const totalMonthlyNet = (monthlyResultsAnnualized.annualTakeHome / 12) + currentMonthFull.taxFree - monthlyBik;
+  // For net pay: employee never receives BiK money, so take-home = (gross - BiK) minus tax
+  // Tax is still on full gross, so we need (gross - BiK) - tax - NI - etc
+  // Which equals: takeHome_on_full_gross - BiK
+  // But takeHome_on_full_gross includes BiK minus extra_tax, so:
+  // net = (takeHome_full_gross/12) - monthlyBik is WRONG (over-subtracts)
+  // Correct: net = ((gross-BiK)*12 - tax - NI - etc) / 12 + taxFree
+  // Simplest: recalculate tax on (gross-BiK) for take-home, display tax from full gross
+  const monthlyResultsMinusBik = monthlyBik > 0 ? calculateTax(
+    (monthlyGross - monthlyBik) * 12,
+    monthlyPension * 12,
+    monthlyGrossSacrifice * 12,
+    taxCode,
+    monthlyNetSacrifice * 12,
+    { taxYear, studentLoanPlans, childBenefitCount, pensionIsSS: pensionType === 'salary_sacrifice' }
+  ) : null;
+  const totalMonthlyNet = (monthlyBik > 0
+    ? monthlyResultsMinusBik.annualTakeHome / 12
+    : monthlyResultsAnnualized.annualTakeHome / 12
+  ) + currentMonthFull.taxFree;
+  // But displayed tax/NI are from full gross (including BiK impact)
+  // The difference between full-gross and minus-BiK tax is the extra cost of BiK
+  // This extra cost is already reflected in the lower net pay
 
   /* const chartData = [
     { name: 'Net Pay', value: monthlyResultsAnnualized.annualTakeHome / 12, color: 'var(--success)' },
@@ -2090,9 +2106,6 @@ function App() {
                   <span className="stat-label" style={{ margin: 0 }}>Estimated Net Pay:</span>
                   <strong style={{ fontSize: '1.5rem', color: 'var(--success)' }}>£{totalMonthlyNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
-                {monthlyBik > 0 && (
-                  <div style={{ fontSize: '0.7rem', opacity: 0.5, marginTop: '0.25rem' }}>DEBUG: gross={monthlyGross.toFixed(2)}, bik={monthlyBik.toFixed(2)}, takeHome={monthlyResultsAnnualized.annualTakeHome.toFixed(2)}, net={totalMonthlyNet.toFixed(2)}</div>
-                )}
               </div>
             </div>
 

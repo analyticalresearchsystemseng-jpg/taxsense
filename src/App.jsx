@@ -796,9 +796,6 @@ function App() {
         applyProfile(loadedProfiles[current]);
         setProfiles(loadedProfiles);
         
-        // Identify in RevenueCat with local user
-        PurchaseService.identifyUser('local-user');
-        
         console.log("[BOOT: READY] Local mode initialized.");
       } catch (e) {
         console.error("[BOOT: ERROR]", e);
@@ -953,6 +950,8 @@ function App() {
   useEffect(() => {
     const initPurchases = async () => {
       await PurchaseService.initialize();
+      // Identify user FIRST, then check subscription — ensures purchase is found for the right user
+      await PurchaseService.identifyUser('local-user');
       const status = await PurchaseService.checkSubscriptionStatus();
       setSubscriptionTier(status);
     };
@@ -960,6 +959,10 @@ function App() {
   }, []);
 
   const handleUpgrade = async (planIndex = 0) => {
+    if (!PurchaseService.isInitialized) {
+      alert('Subscription service is still loading. Please wait a moment and try again.');
+      return;
+    }
     const status = await PurchaseService.purchasePro(planIndex);
     setSubscriptionTier(status);
     if (status !== 'free') {
@@ -1358,24 +1361,12 @@ function App() {
       };
     });
     
-    try {
-      const result = calculateCumulativeTax(cumMonths, taxCode, {
-        taxYear,
-        studentLoanPlans,
-        childBenefitCount,
-        pensionIsSS: pensionType === 'salary_sacrifice'
-      }, selectedMonthIdx);
-      console.log('[TaxSense DEBUG] cumulativeTax result:', JSON.stringify({
-        selectedMonthIdx,
-        currentMonth: result?.currentMonth,
-        monthsCount: result?.months?.length,
-        cumMonths_gross: cumMonths.map(m => m.gross)
-      }));
-      return result;
-    } catch (e) {
-      console.error('[TaxSense DEBUG] cumulativeTax error:', e.message);
-      return null;
-    }
+    return calculateCumulativeTax(cumMonths, taxCode, {
+      taxYear,
+      studentLoanPlans,
+      childBenefitCount,
+      pensionIsSS: pensionType === 'salary_sacrifice'
+    }, selectedMonthIdx);
   })();
   
   // Use cumulative tax for summary display if available
@@ -3223,10 +3214,6 @@ function App() {
       <footer style={{ textAlign: 'center', padding: '2rem 1rem', opacity: 0.3, fontSize: '0.7rem', borderTop: '1px solid var(--glass-border)', marginTop: '2rem' }}>
         <p>© 2026 TaxSense UK. For informational purposes only. This app provides mathematical estimates and illustrative projections based on current UK tax rates. It does not constitute financial, legal, or professional tax advice. Always consult with HMRC or a qualified professional for your personal circumstances.</p>
       </footer>
-      {/* DEBUG: Show cumulative tax status */}
-      <div style={{ background: '#ff0', color: '#000', padding: '4px 8px', fontSize: '0.7rem', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999 }}>
-        DBG: cumTax={cumulativeTax ? `YES m${cumulativeTax.currentMonth?.month} tax=${cumulativeTax.currentMonth?.incomeTax?.toFixed(2)} gross=${cumulativeTax.currentMonth?.gross?.toFixed(2)}` : 'NULL'} | selIdx={selectedMonthIdx} | annTax={(monthlyResultsAnnualized.incomeTax / 12).toFixed(2)}
-      </div>
     </div>
     </>
   );

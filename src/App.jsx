@@ -1358,12 +1358,24 @@ function App() {
       };
     });
     
-    return calculateCumulativeTax(cumMonths, taxCode, {
-      taxYear,
-      studentLoanPlans,
-      childBenefitCount,
-      pensionIsSS: pensionType === 'salary_sacrifice'
-    }, selectedMonthIdx);
+    try {
+      const result = calculateCumulativeTax(cumMonths, taxCode, {
+        taxYear,
+        studentLoanPlans,
+        childBenefitCount,
+        pensionIsSS: pensionType === 'salary_sacrifice'
+      }, selectedMonthIdx);
+      console.log('[TaxSense DEBUG] cumulativeTax result:', JSON.stringify({
+        selectedMonthIdx,
+        currentMonth: result?.currentMonth,
+        monthsCount: result?.months?.length,
+        cumMonths_gross: cumMonths.map(m => m.gross)
+      }));
+      return result;
+    } catch (e) {
+      console.error('[TaxSense DEBUG] cumulativeTax error:', e.message);
+      return null;
+    }
   })();
   
   // Use cumulative tax for summary display if available

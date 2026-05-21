@@ -1352,7 +1352,7 @@ function App() {
       const monthSS = m.deductionItems.filter(d => d.type === 'salary_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0) + m.rawMonthsActual.deductions.filter(d => d.type === 'salary_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0);
       const monthNet = m.deductionItems.filter(d => d.type === 'net_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0) + m.rawMonthsActual.deductions.filter(d => d.type === 'net_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0);
       return {
-        gross: m.gross + (m.bik || 0), // Include BiK in taxable gross
+        gross: m.gross, // BiK is already included in m.gross via baseEnhancementMonthlyTotal
         pension: m.pension,
         salarySacrifice: monthSS,
         netDeductions: monthNet,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, ClipboardList, X, ChevronRight, ChevronDown, CloudUpload, CloudDownload, AlertCircle } from 'lucide-react';
-import { calculateTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
+import { calculateTax, calculateCumulativeTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
 import { getProfiles, saveProfiles, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
 import PurchaseService from './services/PurchaseService';
 import { Share } from '@capacitor/share';
@@ -1343,6 +1343,44 @@ function App() {
     ? monthlyResultsMinusBik.annualTakeHome / 12
     : monthlyResultsAnnualized.annualTakeHome / 12
   ) + currentMonthFull.taxFree;
+
+  // v15.0: Cumulative PAYE Tax Calculation for Monthly Summary
+  // Uses proper UK cumulative tax: tax on YTD income minus tax already paid
+  const cumulativeTax = (() => {
+    if (!monthsActualData || monthsActualData.length === 0) return null;
+    
+    // Build cumulative months data for calculateCumulativeTax
+    const cumMonths = monthsActualData.map((m, i) => {
+      const monthSS = m.deductionItems.filter(d => d.type === 'salary_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0) + m.rawMonthsActual.deductions.filter(d => d.type === 'salary_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0);
+      const monthNet = m.deductionItems.filter(d => d.type === 'net_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0) + m.rawMonthsActual.deductions.filter(d => d.type === 'net_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0);
+      return {
+        gross: m.gross + (m.bik || 0), // Include BiK in taxable gross
+        pension: m.pension,
+        salarySacrifice: monthSS,
+        netDeductions: monthNet,
+        taxFree: m.taxFree,
+        bik: m.bik || 0
+      };
+    });
+    
+    return calculateCumulativeTax(cumMonths, taxCode, {
+      taxYear,
+      studentLoanPlans,
+      childBenefitCount,
+      pensionIsSS: pensionType === 'salary_sacrifice'
+    }, selectedMonthIdx);
+  })();
+  
+  // Use cumulative tax for summary display if available
+  const monthlyIncomeTax = cumulativeTax ? cumulativeTax.currentMonth.incomeTax : (monthlyResultsAnnualized.incomeTax / 12);
+  const monthlyNI = cumulativeTax ? cumulativeTax.currentMonth.ni : (monthlyResultsAnnualized.ni / 12);
+  const monthlyStudentLoan = cumulativeTax ? cumulativeTax.currentMonth.studentLoan : (monthlyResultsAnnualized.studentLoan / 12);
+  const monthlyHICBC = cumulativeTax ? cumulativeTax.currentMonth.hicbc : (monthlyResultsAnnualized.hicbc / 12);
+  
+  // Recalculate net with cumulative tax for consistency
+  const totalMonthlyNetCumulative = cumulativeTax 
+    ? (cumulativeTax.currentMonth.netPay + currentMonthFull.taxFree)
+    : totalMonthlyNet;
   // But displayed tax/NI are from full gross (including BiK impact)
   // The difference between full-gross and minus-BiK tax is the extra cost of BiK
   // This extra cost is already reflected in the lower net pay
@@ -1971,11 +2009,11 @@ function App() {
                 <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', opacity: 0.45, textTransform: 'uppercase', marginBottom: '0.6rem' }}>Statutory Deductions</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
                   <span style={{ opacity: 0.75 }}>Income Tax</span>
-                  <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{(monthlyResultsAnnualized.incomeTax / 12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{monthlyIncomeTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
                   <span style={{ opacity: 0.75 }}>National Insurance</span>
-                  <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{(monthlyResultsAnnualized.ni / 12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{monthlyNI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 {pensionType !== 'salary_sacrifice' && monthlyPension > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
@@ -1983,16 +2021,16 @@ function App() {
                     <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{monthlyPension.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 )}
-                {monthlyResultsAnnualized.studentLoan > 0 && (
+                {monthlyStudentLoan > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
                     <span style={{ opacity: 0.75 }}>Student Loan</span>
-                    <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{(monthlyResultsAnnualized.studentLoan / 12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{monthlyStudentLoan.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 )}
-                {monthlyResultsAnnualized.hicbc > 0 && (
+                {monthlyHICBC > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
                     <span style={{ opacity: 0.75 }}>HICBC (Child Benefit)</span>
-                    <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{(monthlyResultsAnnualized.hicbc / 12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span style={{ color: 'var(--error)', fontWeight: 500 }}>-£{monthlyHICBC.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 )}
               </div>

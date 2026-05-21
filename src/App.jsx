@@ -3223,6 +3223,10 @@ function App() {
       <footer style={{ textAlign: 'center', padding: '2rem 1rem', opacity: 0.3, fontSize: '0.7rem', borderTop: '1px solid var(--glass-border)', marginTop: '2rem' }}>
         <p>© 2026 TaxSense UK. For informational purposes only. This app provides mathematical estimates and illustrative projections based on current UK tax rates. It does not constitute financial, legal, or professional tax advice. Always consult with HMRC or a qualified professional for your personal circumstances.</p>
       </footer>
+      {/* DEBUG: Show cumulative tax status */}
+      <div style={{ background: '#ff0', color: '#000', padding: '4px 8px', fontSize: '0.7rem', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999 }}>
+        DBG: cumTax={cumulativeTax ? `YES m${cumulativeTax.currentMonth?.month} tax=${cumulativeTax.currentMonth?.incomeTax?.toFixed(2)} gross=${cumulativeTax.currentMonth?.gross?.toFixed(2)}` : 'NULL'} | selIdx={selectedMonthIdx} | annTax={(monthlyResultsAnnualized.incomeTax / 12).toFixed(2)}
+      </div>
     </div>
     </>
   );

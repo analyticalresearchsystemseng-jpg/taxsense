@@ -1352,7 +1352,7 @@ function App() {
       const monthSS = m.deductionItems.filter(d => d.type === 'salary_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0) + m.rawMonthsActual.deductions.filter(d => d.type === 'salary_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0);
       const monthNet = m.deductionItems.filter(d => d.type === 'net_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0) + m.rawMonthsActual.deductions.filter(d => d.type === 'net_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0);
       return {
-        gross: m.gross, // BiK is already included in m.gross via baseEnhancementMonthlyTotal
+        gross: m.gross + (m.bik || 0), // BiK is a separate taxable benefit added on top of gross
         pension: m.pension,
         salarySacrifice: monthSS,
         netDeductions: monthNet,
@@ -1377,7 +1377,7 @@ function App() {
   
   // Use cumulative net pay when available (v15.0: proper UK cumulative PAYE)
   const totalMonthlyNet = cumulativeTax
-    ? (cumulativeTax.currentMonth.netPay + currentMonthFull.taxFree)
+    ? cumulativeTax.currentMonth.netPay
     : (monthlyBik > 0
       ? monthlyResultsMinusBik.annualTakeHome / 12
       : monthlyResultsAnnualized.annualTakeHome / 12

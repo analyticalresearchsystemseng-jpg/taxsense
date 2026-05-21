@@ -1382,6 +1382,11 @@ function App() {
   // Legacy reference (same as totalMonthlyNet when no cumulative data)
   const totalMonthlyNetCumulative = totalMonthlyNet;
 
+  // Deduction breakdown for UI display
+  const totalPreTax = monthlyGrossSacrifice + (pensionType === 'salary_sacrifice' ? monthlyPension : 0);
+  const totalStatutory = monthlyIncomeTax + monthlyNI + monthlyStudentLoan + monthlyHICBC + (pensionType !== 'salary_sacrifice' ? monthlyPension : 0);
+  const totalPostTax = monthlyNetSacrifice;
+
   /* const chartData = [
     { name: 'Net Pay', value: monthlyResultsAnnualized.annualTakeHome / 12, color: 'var(--success)' },
     { name: 'Income Tax', value: monthlyResultsAnnualized.incomeTax / 12, color: 'var(--error)' },

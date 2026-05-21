@@ -1339,11 +1339,6 @@ function App() {
     monthlyNetSacrifice * 12,
     { taxYear, studentLoanPlans, childBenefitCount, pensionIsSS: pensionType === 'salary_sacrifice' }
   ) : null;
-  const totalMonthlyNet = (monthlyBik > 0
-    ? monthlyResultsMinusBik.annualTakeHome / 12
-    : monthlyResultsAnnualized.annualTakeHome / 12
-  ) + currentMonthFull.taxFree;
-
   // v15.0: Cumulative PAYE Tax Calculation for Monthly Summary
   // Uses proper UK cumulative tax: tax on YTD income minus tax already paid
   const cumulativeTax = (() => {
@@ -1377,13 +1372,15 @@ function App() {
   const monthlyStudentLoan = cumulativeTax ? cumulativeTax.currentMonth.studentLoan : (monthlyResultsAnnualized.studentLoan / 12);
   const monthlyHICBC = cumulativeTax ? cumulativeTax.currentMonth.hicbc : (monthlyResultsAnnualized.hicbc / 12);
   
-  // Recalculate net with cumulative tax for consistency
-  const totalMonthlyNetCumulative = cumulativeTax 
+  // Use cumulative net pay when available (v15.0: proper UK cumulative PAYE)
+  const totalMonthlyNet = cumulativeTax
     ? (cumulativeTax.currentMonth.netPay + currentMonthFull.taxFree)
-    : totalMonthlyNet;
-  // But displayed tax/NI are from full gross (including BiK impact)
-  // The difference between full-gross and minus-BiK tax is the extra cost of BiK
-  // This extra cost is already reflected in the lower net pay
+    : (monthlyBik > 0
+      ? monthlyResultsMinusBik.annualTakeHome / 12
+      : monthlyResultsAnnualized.annualTakeHome / 12
+    ) + currentMonthFull.taxFree;
+  // Legacy reference (same as totalMonthlyNet when no cumulative data)
+  const totalMonthlyNetCumulative = totalMonthlyNet;
 
   /* const chartData = [
     { name: 'Net Pay', value: monthlyResultsAnnualized.annualTakeHome / 12, color: 'var(--success)' },

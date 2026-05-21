@@ -1318,6 +1318,7 @@ function App() {
   const monthlyNetSacrifice = currentMonthFull.deductionItems.filter(d => d.type === 'net_sacrifice').reduce((s, i) => s + Number(i.amount || 0), 0) + currentMonthFull.rawMonthsActual.deductions.filter(d => d.type === 'net_sacrifice').reduce((s, i) => s + Number(i.amount || 0), 0);
 
   const monthlyBik = currentMonthFull.bik || 0;
+  const monthlyTaxableIncome = (monthlyGross + monthlyBik) - monthlyPension - monthlyGrossSacrifice;
   // Tax is calculated on FULL gross (including BiK) — HMRC taxes the benefit
   const monthlyResultsAnnualized = calculateTax(
     monthlyGross * 12,
@@ -2126,6 +2127,10 @@ function App() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem', opacity: 0.6 }}>
                   <span>Total Gross</span>
                   <span>£{monthlyGross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem', opacity: 0.6 }}>
+                  <span>Taxable Income</span>
+                  <span>£{monthlyTaxableIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 {totalPreTax > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem', opacity: 0.6 }}>

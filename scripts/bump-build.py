@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Auto-increment build number before every build to prevent Apple duplicate rejection."""
-import re, sys, os
+import re, sys, os, time
 
 PBXPROJ = os.path.join(os.path.dirname(os.path.dirname(__file__)), 
                        "ios/App/App.xcodeproj/project.pbxproj")
@@ -15,7 +15,10 @@ if not match:
     sys.exit(1)
 
 current = int(match.group(1))
-new = current + 1
+# Use timestamp-based increment to avoid duplicate collisions with Apple
+# Increment by at least 10, plus a small time-based offset to guarantee uniqueness
+increment = 10 + (int(time.time()) % 10)
+new = current + increment
 
 # Replace all occurrences (Debug and Release configs)
 content = content.replace(

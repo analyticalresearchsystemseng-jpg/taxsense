@@ -946,6 +946,17 @@ function App() {
     if (!isNaN(num)) setter(num);
   };
 
+  const handleDecimalInput = (val, setter) => {
+    if (val === '') {
+      setter('');
+      return;
+    }
+    // Allow typing decimals in-progress (e.g. "12.", "0.5") without snapping to Number
+    if (/^\d*\.?\d*$/.test(val)) {
+      setter(val);
+    }
+  };
+
   // --- RevenueCat Initialization ---
   useEffect(() => {
     const initPurchases = async () => {
@@ -2076,7 +2087,7 @@ function App() {
                       <input
                         placeholder="Amt"
                         value={d.amount}
-                        onChange={(e) => handleNumericInput(e.target.value, (v) => updateMonthItem(selectedMonthIdx, 'deductions', d.id, 'amount', v))}
+                        onChange={(e) => handleDecimalInput(e.target.value, (v) => updateMonthItem(selectedMonthIdx, 'deductions', d.id, 'amount', v))}
                         className="input-field"
                       />
                       <select value={d.type} onChange={(e) => updateMonthItem(selectedMonthIdx, 'deductions', d.id, 'type', e.target.value)} className="input-field">

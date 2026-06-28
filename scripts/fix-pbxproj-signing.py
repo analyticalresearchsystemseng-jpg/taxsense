@@ -26,7 +26,7 @@ if len(parts) >= 3:
     # Rebuild: first (Debug) + middle (Release with profile) + rest
     c = (parts[0] + parts[1] +
          'PRODUCT_BUNDLE_IDENTIFIER = uk.co.taxsense.app;\n'
-         '\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app";' +
+         '\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "TaxSense App Store";' +
          ''.join(parts[2:]))
 
 with open(path, "w") as f:

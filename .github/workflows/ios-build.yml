@@ -77,11 +77,11 @@ jobs:
           # Ensure login keychain is unlocked for match-installed certs
           security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
           
-          # Verify cert was installed
+          # Debug: check what certs are installed
           echo "=== Installed Signing Identities ==="
-          security find-identity -v -p ios
+          security find-identity -v -p codesigning 2>&1 || true
           echo "=== Installed Profiles ==="
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null | head -5
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
           
           echo "=== Archiving ==="
           cd ios

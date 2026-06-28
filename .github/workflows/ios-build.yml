@@ -64,24 +64,35 @@ jobs:
           printf '%s\n' "$ASC_KEY_P8" > /tmp/AuthKey.p8
           chmod 600 /tmp/AuthKey.p8
           
-          # Run match to install certs + profiles (creates match-certs branch on first run)
+          # Run match to install certs + profiles (reads from match-certs branch)
           fastlane match appstore \
             --git_url "https://analyticalresearchsystemseng-jpg:${GH_PAT}@github.com/analyticalresearchsystemseng-jpg/taxsense.git" \
             --git_branch "match-certs" \
-            --force \
             --verbose 2>&1
       
       - name: Archive
         run: |
+          AUTOPROV_OPTS="-allowProvisioningUpdates -authenticationKeyPath /tmp/AuthKey.p8 -authenticationKeyID ${{ secrets.ASC_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }}"
+          
+          # Ensure login keychain is unlocked for match-installed certs
+          security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
+          
+          # Verify cert was installed
+          echo "=== Installed Signing Identities ==="
+          security find-identity -v -p ios
+          echo "=== Installed Profiles ==="
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null | head -5
+          
+          echo "=== Archiving ==="
           cd ios
           xcodebuild archive \
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
             -archivePath ./build/App.xcarchive \
-            'CODE_SIGN_STYLE=Manual' \
-            'PROVISIONING_PROFILE_SPECIFIER=match AppStore uk.co.taxsense.app' \
-            'DEVELOPMENT_TEAM=M6BWMNZQ57'
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=M6BWMNZQ57 \
+            $AUTOPROV_OPTS
       
       - name: Export IPA
         run: |
@@ -96,14 +107,9 @@ jobs:
               <key>method</key>
               <string>app-store</string>
               <key>signingStyle</key>
-              <string>manual</string>
+              <string>automatic</string>
               <key>teamID</key>
               <string>M6BWMNZQ57</string>
-              <key>provisioningProfiles</key>
-              <dict>
-                  <key>uk.co.taxsense.app</key>
-                  <string>12bc3121-51d8-461a-9b8b-e972f96cea52</string>
-              </dict>
           </dict>
           </plist>
           PLIST

@@ -18,8 +18,8 @@ if (fs.existsSync(projectPath)) {
     content = content.replace(/\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = .*?;\n/g, '');
     content = content.replace(/\t\t\t\t'PROVISIONING_PROFILE_SPECIFIER' = .*?;\n/g, '');
     
-    // Use Automatic provisioning — xcodebuild + match will handle certs
-    content = content.replace(/ProvisioningStyle = Manual;/g, 'ProvisioningStyle = Automatic;');
+    // Use Manual provisioning — match handles certs + profiles
+    content = content.replace(/ProvisioningStyle = Automatic;/g, 'ProvisioningStyle = Manual;');
     
     // Ensure the main project forces the Team ID
     if (content.includes('DevelopmentTeam =')) {

@@ -76,10 +76,7 @@ jobs:
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
             -archivePath ./build/App.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath /tmp/AuthKey.p8 \
-            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} \
+            PROVISIONING_PROFILE_SPECIFIER="match AppStore uk.co.taxsense.app" \
             DEVELOPMENT_TEAM=M6BWMNZQ57
       
       - name: Export IPA

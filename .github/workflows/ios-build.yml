@@ -47,3 +47,15 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      
+      - name: Upload diagnostic artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-and-ipa
+          path: |
+            /tmp/archive.log
+            /tmp/export.log
+            ios/build/export/App.ipa
+          if-no-files-found: ignore
+          retention-days: 1

@@ -27,15 +27,7 @@ jobs:
         run: npx cap sync ios
       
       - name: Fix project signing (post-sync — cap resets pbxproj)
-        run: |
-          cd ios/App
-          # Set Manual signing style
-          sed -i '' 's/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g' App.xcodeproj/project.pbxproj
-          # Remove any hardcoded CODE_SIGN_IDENTITY that conflicts
-          sed -i '' '/CODE_SIGN_IDENTITY = /d' App.xcodeproj/project.pbxproj
-          # Inject profile specifier into Release target
-          sed -i '' 's|ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;|ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app";|' App.xcodeproj/project.pbxproj
-          echo "✅ Signing fix applied after cap sync"
+        run: python3 scripts/fix-pbxproj-signing.py
       
       - name: Bump build number (prevent Apple duplicate rejection)
         run: python3 scripts/bump-build.py

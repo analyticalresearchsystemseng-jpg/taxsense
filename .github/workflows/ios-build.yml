@@ -86,9 +86,7 @@ jobs:
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive \
-            PROVISIONING_PROFILE_SPECIFIER="match AppStore uk.co.taxsense.app" \
-            DEVELOPMENT_TEAM=M6BWMNZQ57
+            -archivePath ./build/App.xcarchive
       
       - name: Export IPA
         run: |

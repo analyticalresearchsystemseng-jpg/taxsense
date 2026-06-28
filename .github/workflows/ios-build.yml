@@ -25,7 +25,7 @@ jobs:
       
       - name: Sync to iOS
         run: npx cap sync ios
-      
+
       - name: Bump build number (prevent Apple duplicate rejection)
         run: python3 scripts/bump-build.py
 
@@ -53,17 +53,18 @@ jobs:
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security import $CERT_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          # Note: no -t cert — import the full p12 including private key
+          security import $CERT_PATH -P "$P12_PASSWORD" -A -f pkcs12 -k $KEYCHAIN_PATH
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
+          security default-keychain -s $KEYCHAIN_PATH
           mkdir -p ~/Library/MobileDevice/"Provisioning Profiles"
           UUID=$(openssl cms -in $PP_PATH -inform DER -verify -noverify -out /tmp/profile.plist 2>/dev/null && python3 -c "import plistlib; f=open('/tmp/profile.plist','rb'); print(plistlib.load(f)['UUID'])")
           cp $PP_PATH ~/Library/MobileDevice/"Provisioning Profiles"/$UUID.mobileprovision
           echo "✅ Certificate and profile installed (UUID: $UUID)"
-          security list-keychain -d user -s $KEYCHAIN_PATH ~/Library/Keychains/login.keychain-db
-
-      - name: Fix pbxproj signing (cap sync resets it)
-        run: python3 scripts/fix-pbxproj-signing.py
+          # Verify the installed identity
+          echo "Installed identities:"
+          security find-identity -v -p codesigning $KEYCHAIN_PATH
       
       - name: Setup ASC API Key
         env:
@@ -79,7 +80,12 @@ jobs:
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive
+            -archivePath ./build/App.xcarchive \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="822a9871-6ecc-4fc9-ae2f-098bb79bf314" \
+            DEVELOPMENT_TEAM=M6BWMNZQ57 \
+            PRODUCT_BUNDLE_IDENTIFIER=uk.co.taxsense.app
       
       - name: Export IPA
         run: |

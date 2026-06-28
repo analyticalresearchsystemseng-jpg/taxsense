@@ -71,13 +71,21 @@ jobs:
           chmod 600 /tmp/AuthKey.p8
       
       - name: Archive
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           cd ios
           xcodebuild archive \
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive
+            -archivePath ./build/App.xcarchive \
+            PROVISIONING_PROFILE_SPECIFIER='TaxSense App Store' \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath /tmp/AuthKey.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
       
       - name: Export IPA
         run: |

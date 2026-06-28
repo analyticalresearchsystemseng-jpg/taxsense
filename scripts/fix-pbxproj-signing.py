@@ -1,41 +1,34 @@
 #!/usr/bin/env python3
-"""Fix pbxproj signing after cap sync (which resets the project)."""
+"""Inject Manual signing + profile specifier into pbxproj (run after cap sync)."""
 import re, sys
 
 path = "ios/App/App.xcodeproj/project.pbxproj"
 try:
     with open(path, "r") as f:
-        content = f.read()
+        c = f.read()
 except FileNotFoundError:
     print("⚠️ pbxproj not found, skipping")
     sys.exit(0)
 
-# Remove any hardcoded signing build settings — they conflict with Manual
-content = re.sub(r'\t{4}CODE_SIGN_IDENTITY = .*?;\n', "", content)
-content = re.sub(r'\t{4}CODE_SIGNING_ALLOWED = .*?;\n', "", content)
-content = re.sub(r'\t{4}CODE_SIGN_STYLE = .*?;\n', "", content)
-content = re.sub(r'\t{4}CODE_SIGNING_REQUIRED = .*?;\n', "", content)
-content = re.sub(r'\t{4}PROVISIONING_PROFILE_SPECIFIER = .*?;\n', "", content)
-content = re.sub(r"\t{4}'PROVISIONING_PROFILE_SPECIFIER' = .*?;\n", "", content)
+# Remove any conflicting signing build settings
+for pat in ['ProvisioningStyle', 'CODE_SIGN_IDENTITY', 'CODE_SIGN_STYLE',
+            'CODE_SIGNING_ALLOWED', 'CODE_SIGNING_REQUIRED',
+            'PROVISIONING_PROFILE_SPECIFIER']:
+    c = re.sub(r'\t{4}' + pat + r' = .*?;\n', '', c)
 
-# Set Manual provisioning at project and target levels
-content = content.replace("ProvisioningStyle = Automatic;", "ProvisioningStyle = Manual;")
+# Add ProvisioningStyle = Manual at the project level (after attributes = {)
+c = c.replace('attributes = {', 'attributes = {\n\t\t\t\tProvisioningStyle = Manual;')
 
-# Inject profile specifier after the SECOND PRODUCT_BUNDLE_IDENTIFIER line (Release)
-count = 0
-def inject_profile(m):
-    global count
-    count += 1
-    if count == 2:
-        return m.group(0) + '\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app";'
-    return m.group(0)
-
-content = re.sub(
-    r'\t{4}PRODUCT_BUNDLE_IDENTIFIER = uk\.co\.taxsense\.app;',
-    inject_profile,
-    content
-)
+# Add profile specifier after the SECOND PRODUCT_BUNDLE_IDENTIFIER (Release config)
+# Split on the bundle ID line — there are exactly 2 occurrences (Debug + Release)
+parts = c.split('PRODUCT_BUNDLE_IDENTIFIER = uk.co.taxsense.app;')
+if len(parts) >= 3:
+    # Rebuild: first (Debug) + middle (Release with profile) + rest
+    c = (parts[0] + parts[1] +
+         'PRODUCT_BUNDLE_IDENTIFIER = uk.co.taxsense.app;\n'
+         '\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app";' +
+         ''.join(parts[2:]))
 
 with open(path, "w") as f:
-    f.write(content)
-print("✅ pbxproj signing fix applied")
+    f.write(c)
+print("✅ pbxproj signing injected (Manual + profile specifier)")

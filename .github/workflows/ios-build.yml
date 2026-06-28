@@ -51,50 +51,31 @@ jobs:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           set -e
-          # Install cryptography for ASC key conversion
           pip3 install cryptography -q 2>/dev/null || true
-          
-          # Write API key JSON for Fastlane
           python3 scripts/write_asc_key.py
-          
-          # Save p8 key for xcodebuild -allowProvisioningUpdates auth
           printf '%s\n' "$ASC_KEY_P8" > /tmp/AuthKey.p8
           chmod 600 /tmp/AuthKey.p8
-          
-          # Run match to install certs + profiles (reads from match-certs branch)
           fastlane match appstore \
             --git_url "https://analyticalresearchsystemseng-jpg:${GH_PAT}@github.com/analyticalresearchsystemseng-jpg/taxsense.git" \
             --git_branch "match-certs" \
             --verbose 2>&1
-      
-      - name: Archive
-        run: |
-          # Copy match-installed profile from UserData to MobileDevice (where xcodebuild looks)
+          # Copy profile to where xcodebuild looks
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
-          
-          # Ensure keychain is unlocked for match-installed certs
           security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
-          
-          # Debug: check certs + profiles
-          echo "=== Installed Signing Identities ==="
-          security find-identity -v -p codesigning 2>&1 || true
-          echo "=== Installed Profiles ==="
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
-          
-          echo "=== Archiving ==="
+      - name: Inject signing into pbxproj
+        run: python3 scripts/fix-pbxproj-signing.py
+      - name: Archive
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
           cd ios
           xcodebuild archive \
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=M6BWMNZQ57 \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath /tmp/AuthKey.p8 \
-            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }}
+            -archivePath ./build/App.xcarchive
       
       - name: Export IPA
         run: |

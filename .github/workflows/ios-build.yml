@@ -60,8 +60,10 @@ jobs:
           UUID=$(openssl cms -in $PP_PATH -inform DER -verify -noverify -out /tmp/profile.plist 2>/dev/null && python3 -c "import plistlib; f=open('/tmp/profile.plist','rb'); print(plistlib.load(f)['UUID'])")
           cp $PP_PATH ~/Library/MobileDevice/"Provisioning Profiles"/$UUID.mobileprovision
           echo "✅ Certificate and profile installed (UUID: $UUID)"
-          # Also ensure login keychain is in search list (for system certs)
           security list-keychain -d user -s $KEYCHAIN_PATH ~/Library/Keychains/login.keychain-db
+
+      - name: Fix pbxproj signing (cap sync resets it)
+        run: python3 scripts/fix-pbxproj-signing.py
       
       - name: Setup ASC API Key
         env:
@@ -71,21 +73,13 @@ jobs:
           chmod 600 /tmp/AuthKey.p8
       
       - name: Archive
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           cd ios
           xcodebuild archive \
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive \
-            PROVISIONING_PROFILE_SPECIFIER='TaxSense App Store' \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath /tmp/AuthKey.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+            -archivePath ./build/App.xcarchive
       
       - name: Export IPA
         run: |

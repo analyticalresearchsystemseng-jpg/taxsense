@@ -19,16 +19,6 @@ for pat in ['ProvisioningStyle', 'CODE_SIGN_IDENTITY', 'CODE_SIGN_STYLE',
 # Add ProvisioningStyle = Manual at the project level (after attributes = {)
 c = c.replace('attributes = {', 'attributes = {\n\t\t\t\tProvisioningStyle = Manual;')
 
-# Add profile specifier after the SECOND PRODUCT_BUNDLE_IDENTIFIER (Release config)
-# Split on the bundle ID line — there are exactly 2 occurrences (Debug + Release)
-parts = c.split('PRODUCT_BUNDLE_IDENTIFIER = uk.co.taxsense.app;')
-if len(parts) >= 3:
-    # Rebuild: first (Debug) + middle (Release with profile) + rest
-    c = (parts[0] + parts[1] +
-         'PRODUCT_BUNDLE_IDENTIFIER = uk.co.taxsense.app;\n'
-         '\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "TaxSense App Store";' +
-         ''.join(parts[2:]))
-
 with open(path, "w") as f:
     f.write(c)
 print("✅ pbxproj signing injected (Manual + profile specifier)")

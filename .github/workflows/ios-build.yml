@@ -76,15 +76,14 @@ jobs:
       - name: Archive
         run: |
           cd ios
-          xcodebuild archive \
-            -scheme App \
-            -workspace App/App.xcworkspace \
-            -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="822a9871-6ecc-4fc9-ae2f-098bb79bf314" \
-            DEVELOPMENT_TEAM=M6BWMNZQ57 \
+          xcodebuild archive \\
+            -scheme App \\
+            -workspace App/App.xcworkspace \\
+            -destination 'generic/platform=iOS' \\
+            -archivePath ./build/App.xcarchive \\
+            CODE_SIGN_STYLE=Manual \\
+            CODE_SIGN_IDENTITY="Apple Distribution" \\
+            DEVELOPMENT_TEAM=M6BWMNZQ57 \\
             PRODUCT_BUNDLE_IDENTIFIER=uk.co.taxsense.app
       
       - name: Export IPA

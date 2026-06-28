@@ -1418,6 +1418,55 @@ function App() {
 
   const ytdOTTotal = allOvertime.reduce((acc, o) => acc + calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier), 0);
 
+  // Marginal rate on overtime (additional income tax + NI based on tax band & tax code)
+  const marginalOTRate = useMemo(() => {
+    const ani = projection.taxableIncome || 0;
+    const otAmt = ytdOTTotal || 0;
+    if (otAmt <= 0) return 0;
+
+    const cleanCode = (taxCode || '1257L').toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
+
+    // Special fixed-rate codes
+    if (cleanCode === 'NT') return 0;             // No tax
+    if (cleanCode.startsWith('D1')) return 0.45 + 0.02;  // Additional rate
+    if (cleanCode.startsWith('D0')) return 0.40 + 0.02;  // Higher rate
+    if (cleanCode.startsWith('BR')) return 0.20 + 0.08;  // All at basic rate (assume basic NI)
+
+    // Determine effective personal allowance from tax code
+    let effectivePA = 12570; // default 1257L
+    if (cleanCode.startsWith('0T')) effectivePA = 0;
+    else if (cleanCode.startsWith('K')) {
+      // K code: negative allowance — adds income
+      const kMatch = cleanCode.match(/-?(\d+)/);
+      const kVal = kMatch ? parseInt(kMatch[1]) * 10 : 0;
+      effectivePA = -kVal;
+    } else {
+      const codeMatch = cleanCode.match(/-?(\d+)/);
+      if (codeMatch) effectivePA = parseInt(codeMatch[1]) * 10;
+    }
+
+    // Effective ANI for marginal rate = actual ANI + effect of code (negative PA = more taxable)
+    // If PA is negative (K code), the effective income is ANI + |PA|
+    // If PA is reduced, the effective income is shifted accordingly
+    const paShortfall = Math.max(0, 12570 - effectivePA);
+    const effectiveAni = ani + paShortfall;
+
+    // NI rate — based on total income (including overtime)
+    const totalForNI = ani + otAmt;
+    const niRate = totalForNI <= 50270 ? 0.08 : (ani < 50270 ? 0.08 : 0.02);
+
+    // Determine IT rate based on effective ANI
+    if (effectiveAni > 125140) return 0.45 + niRate;               // Additional rate
+    if (effectiveAni > 100000) return 0.60 + niRate;               // 60% trap (PA tapering)
+    if (effectiveAni > 50270) return 0.40 + niRate;                // Higher rate
+    if (effectiveAni <= effectivePA) return 0;                     // Below personal allowance
+    return 0.20 + niRate;                                          // Basic rate
+  }, [projection, ytdOTTotal, taxCode]);
+
+  const ytdOTNet = ytdOTTotal * (1 - marginalOTRate);
+  const unclaimedOTNet = allOvertime.filter(o => !o.claimed)
+    .reduce((s, o) => s + calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier), 0) * (1 - marginalOTRate);
+
   const filteredOT = allOvertime.filter(o => {
     if (otFilterClaimed === 'claimed' && !o.claimed) return false;
     if (otFilterClaimed === 'unclaimed' && o.claimed) return false;
@@ -2225,14 +2274,23 @@ function App() {
 
             <div className="glass-card" style={{ marginBottom: '2rem' }}>
               <h2 style={{ margin: 0 }}>Overtime Summary</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.6rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.6rem', marginTop: '0.75rem' }}>
                 <div style={{ padding: '0.5rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.6rem', border: '1px solid rgba(99, 102, 241, 0.2)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.6rem', color: 'var(--primary)', marginBottom: '0.1rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>YTD Earned</div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--primary)', marginBottom: '0.1rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>YTD Earned (Gross)</div>
                   <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>£{ytdOTTotal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
                 </div>
+                <div style={{ padding: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '0.6rem', border: '1px solid rgba(16, 185, 129, 0.2)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--success)', marginBottom: '0.1rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>YTD Net (After Tax)</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>£{ytdOTNet.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+                  <div style={{ fontSize: '0.55rem', opacity: 0.5, marginTop: '0.1rem' }}>@{Math.round(marginalOTRate * 100)}% marginal rate</div>
+                </div>
                 <div style={{ padding: '0.5rem', background: 'rgba(251, 191, 36, 0.1)', borderRadius: '0.6rem', border: '1px solid rgba(251, 191, 36, 0.2)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.6rem', color: '#fbbf24', marginBottom: '0.1rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unclaimed</div>
+                  <div style={{ fontSize: '0.6rem', color: '#fbbf24', marginBottom: '0.1rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unclaimed (Gross)</div>
                   <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>£{allOvertime.filter(o => !o.claimed).reduce((s, o) => s + calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+                </div>
+                <div style={{ padding: '0.5rem', background: 'rgba(251, 191, 36, 0.15)', borderRadius: '0.6rem', border: '1px solid rgba(251, 191, 36, 0.3)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.6rem', color: '#f59e0b', marginBottom: '0.1rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unclaimed (Net)</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>£{unclaimedOTNet.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
                 </div>
               </div>
             </div>
@@ -2311,7 +2369,8 @@ function App() {
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <CheckSquare size={16} color="var(--success)" />
                         Claimed Overtime ({claimed.length})
-                        <span style={{ opacity: 0.6, fontWeight: 400 }}>— £{claimedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span style={{ opacity: 0.6, fontWeight: 400 }}>— £{claimedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} gross</span>
+                        <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '0.75rem' }}>→ £{(claimedTotal * (1 - marginalOTRate)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} net</span>
                       </span>
                       <ChevronDown size={16} style={{ transform: showClaimedOT ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
                     </button>

@@ -33,3 +33,4 @@ npm-debug.log*
 *.aab
 *.keystore
 taxsense-release.keystore
+combined.p12

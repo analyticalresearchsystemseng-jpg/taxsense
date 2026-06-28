@@ -49,53 +49,55 @@ class PurchaseService {
         }
     }
 
+    // Helper: determine tier from entitlement info
+    detectTierFromEntitlement(entitlement) {
+        if (!entitlement) return 'free';
+        const pid = (entitlement.productIdentifier || '').toLowerCase();
+        const planId = (entitlement.productPlanIdentifier || '').toLowerCase();
+        if (pid.includes('annual') || pid.includes('yearly') || pid.includes('year') ||
+            planId.includes('annual') || planId.includes('yearly')) {
+            return 'annual';
+        }
+        const cached = localStorage.getItem('taxsense_cached_tier');
+        if (cached === 'annual' || cached === 'monthly') return cached;
+        return 'monthly';
+    }
+
     async checkSubscriptionStatus() {
         if (this.mockMode) {
-            // In mock mode, check local storage for the specific tier
             const mockTier = localStorage.getItem('taxsense_pro_mock_tier');
             return mockTier ? mockTier : 'free';
         }
 
-        try {
-            // Always try restorePurchases first — finds existing subscriptions
-            // even after app reinstalls/updates where anonymous ID changed
-            try {
-                const restoredInfo = await Purchases.restorePurchases();
-                if (restoredInfo.entitlements.active['pro_access']) {
-                    const tier = 'monthly'; // TODO: detect monthly vs annual from expiration dates
-                    localStorage.setItem('taxsense_cached_tier', tier);
-                    return tier;
-                }
-            } catch (restoreErr) {
-                console.warn('[RevenueCat] Restore check failed (non-fatal):', restoreErr.message || restoreErr);
-            }
-
-            // Fallback: check customer info directly
+        // Primary: check customer info for logged-in user (identifyUser runs before this)
+        // RevenueCat auto-links purchases to the logged-in user, so getCustomerInfo
+        // is sufficient — no need for restorePurchases on every launch.
+        for (let attempt = 0; attempt < 2; attempt++) {
             try {
                 const customerInfo = await Purchases.getCustomerInfo();
-                if (customerInfo.entitlements.active['pro_access']) {
-                    const tier = 'monthly';
+                const entitlement = customerInfo.entitlements.active['pro_access'];
+                if (entitlement) {
+                    const tier = this.detectTierFromEntitlement(entitlement);
                     localStorage.setItem('taxsense_cached_tier', tier);
                     return tier;
                 }
+                // No active entitlement found from server — break to fallbacks
+                break;
             } catch (infoErr) {
-                console.warn('[RevenueCat] Customer info check failed:', infoErr.message || infoErr);
+                console.warn(`[RevenueCat] Customer info check failed (attempt ${attempt + 1}):`, infoErr.message || infoErr);
+                // On first failure wait briefly then retry (SDK may still be syncing)
+                if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
             }
-
-            // Last resort: check locally cached tier (survives app restarts)
-            const cachedTier = localStorage.getItem('taxsense_cached_tier');
-            if (cachedTier && cachedTier !== 'free') {
-                console.log('[RevenueCat] Using cached tier:', cachedTier);
-                return cachedTier;
-            }
-
-            return 'free';
-        } catch (e) {
-            console.error('Failed to fetch customer info:', e);
-            // Last resort: check locally cached tier
-            const cachedTier = localStorage.getItem('taxsense_cached_tier');
-            return cachedTier || 'free';
         }
+
+        // Fallback: check locally cached tier (survives app updates via iOS sandbox)
+        const cachedTier = localStorage.getItem('taxsense_cached_tier');
+        if (cachedTier && cachedTier !== 'free') {
+            console.log('[RevenueCat] Using cached tier:', cachedTier);
+            return cachedTier;
+        }
+
+        return 'free';
     }
 
     async purchasePro(planIndex = 0) {
@@ -141,7 +143,7 @@ class PurchaseService {
             console.log('[Purchase] Purchase result:', JSON.stringify(purchaseResult, null, 2));
             
             if (purchaseResult.customerInfo.entitlements.active['pro_access']) {
-                const tier = 'monthly'; // TODO: detect monthly vs annual from expiration dates
+                const tier = planIndex === 0 ? 'monthly' : 'annual';
                 localStorage.setItem('taxsense_cached_tier', tier);
                 return tier;
             }
@@ -163,8 +165,9 @@ class PurchaseService {
 
         try {
             const customerInfo = await Purchases.restorePurchases();
-            if (customerInfo.entitlements.active['pro_access']) {
-                const tier = 'monthly';
+            const entitlement = customerInfo.entitlements.active['pro_access'];
+            if (entitlement) {
+                const tier = this.detectTierFromEntitlement(entitlement);
                 localStorage.setItem('taxsense_cached_tier', tier);
                 return tier;
             }

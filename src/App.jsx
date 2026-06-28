@@ -2334,6 +2334,9 @@ function App() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontWeight: 600, color: 'var(--success)' }}>£{calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '2px' }}>
+                        → £{(calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier) * (1 - marginalOTRate)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} net
+                      </div>
                       <button className="btn-icon" style={{ color: 'var(--error)', marginLeft: 'auto' }} onClick={(e) => { e.stopPropagation(); removeMonthItem(o.monthIdx, 'overtime', o.id); }}><Trash2 size={16} /></button>
                     </div>
                   </div>
@@ -2391,6 +2394,9 @@ function App() {
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <div style={{ fontWeight: 600, color: 'var(--success)' }}>£{calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '2px' }}>
+                              → £{(calculateOvertime(baseSalary, contractedHours, o.hours, o.multiplier) * (1 - marginalOTRate)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} net
+                            </div>
                             <button className="btn-icon" style={{ color: 'var(--error)', marginLeft: 'auto' }} onClick={(e) => { e.stopPropagation(); removeMonthItem(o.monthIdx, 'overtime', o.id); }}><Trash2 size={16} /></button>
                           </div>
                         </div>

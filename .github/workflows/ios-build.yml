@@ -37,38 +37,38 @@ jobs:
           cd ios/App
           pod install --repo-update
       
-      - name: Install Fastlane
-        run: brew install fastlane
-
-      - name: Setup Match & ASC API Key
+      - name: Install signing certificate and provisioning profile
         env:
-          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          APPLE_TEAM_ID: M6BWMNZQ57
-          APPLE_BUNDLE_ID: uk.co.taxsense.app
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          GH_PAT: ${{ secrets.GH_PAT }}
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_P12 }}
+          P12_PASSWORD: ${{ secrets.IOS_DIST_P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: TempPass123
         run: |
           set -e
-          pip3 install cryptography -q 2>/dev/null || true
-          python3 scripts/write_asc_key.py
+          CERT_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERT_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security import $CERT_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+          mkdir -p ~/Library/MobileDevice/Provisioning\\ Profiles
+          UUID=$(openssl cms -in $PP_PATH -inform DER -verify -noverify -out /tmp/profile.plist 2>/dev/null && python3 -c "import plistlib; f=open('/tmp/profile.plist','rb'); print(plistlib.load(f)['UUID'])")
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\\ Profiles/$UUID.mobileprovision
+          echo "✅ Certificate and profile installed (UUID: $UUID)"
+      
+      - name: Setup ASC API Key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
           printf '%s\n' "$ASC_KEY_P8" > /tmp/AuthKey.p8
           chmod 600 /tmp/AuthKey.p8
-          fastlane match appstore \
-            --git_url "https://analyticalresearchsystemseng-jpg:${GH_PAT}@github.com/analyticalresearchsystemseng-jpg/taxsense.git" \
-            --git_branch "match-certs" \
-            --verbose 2>&1
-          # Copy profile to where xcodebuild looks
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
-          security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
-      - name: Inject signing into pbxproj
-        run: python3 scripts/fix-pbxproj-signing.py
+      
       - name: Archive
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           cd ios
           xcodebuild archive \
@@ -81,7 +81,6 @@ jobs:
         run: |
           cd ios
           mkdir -p build/export
-          
           cat > build/exportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -90,19 +89,22 @@ jobs:
               <key>method</key>
               <string>app-store</string>
               <key>signingStyle</key>
-              <string>automatic</string>
+              <string>manual</string>
               <key>teamID</key>
               <string>M6BWMNZQ57</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>uk.co.taxsense.app</key>
+                  <string>822a9871-6ecc-4fc9-ae2f-098bb79bf314</string>
+              </dict>
           </dict>
           </plist>
           PLIST
-          
           xcodebuild -exportArchive \
             -archivePath ./build/App.xcarchive \
             -exportOptionsPlist ./build/exportOptions.plist \
             -exportPath ./build/export
-          
-          echo "✅ IPA exported to: build/export/App.ipa"
+          echo "✅ IPA exported"
       
       - name: Upload to TestFlight
         env:
@@ -110,11 +112,9 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
-          echo "=== Uploading IPA to TestFlight ==="
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$ASC_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
           chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
-          
           xcrun altool --upload-app \
             --type ios \
             --file ios/build/export/App.ipa \

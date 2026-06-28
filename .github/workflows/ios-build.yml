@@ -73,7 +73,7 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
           
-          # Ensure keychain is unlocked
+          # Ensure keychain is unlocked for match-installed certs
           security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
           
           # Debug: check certs + profiles
@@ -88,7 +88,13 @@ jobs:
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive
+            -archivePath ./build/App.xcarchive \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=M6BWMNZQ57 \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath /tmp/AuthKey.p8 \
+            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }}
       
       - name: Export IPA
         run: |

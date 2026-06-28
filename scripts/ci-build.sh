@@ -34,6 +34,20 @@ chmod 600 /tmp/AuthKey.p8
 echo "=== Archive ==="
 cd ios
 
+# Inject profile specifier into the App target's build config only (Pods already fine)
+python3 -c "
+import re
+with open('App/App.xcodeproj/project.pbxproj') as f: c=f.read()
+m = re.search(r'(buildSettings = \{[^\}]*PRODUCT_BUNDLE_IDENTIFIER = uk\.co\.taxsense\.app;)', c)
+if m:
+    start = m.end()
+    c = c[:start] + '\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = \"822a9871-6ecc-4fc9-ae2f-098bb79bf314\";' + c[start:]
+    with open('App/App.xcodeproj/project.pbxproj','w') as f: f.write(c)
+    print('✅ pbxproj patched')
+else:
+    print('⚠️ Bundle ID not found in pbxproj, continuing anyway')
+"
+
 xcodebuild archive -scheme App -workspace App/App.xcworkspace -destination 'generic/platform=iOS' -archivePath ./build/App.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" DEVELOPMENT_TEAM=M6BWMNZQ57 PRODUCT_BUNDLE_IDENTIFIER=uk.co.taxsense.app
 
 echo "=== Export IPA ==="

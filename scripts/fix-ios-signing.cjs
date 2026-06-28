@@ -10,21 +10,15 @@ console.log('--- Step 1: Applying App Target Signing Fixes ---');
 if (fs.existsSync(projectPath)) {
     let content = fs.readFileSync(projectPath, 'utf8');
 
-    // Make sure we strip any "inversion" code from previous SPM attempts
+    // Remove any hardcoded signing overrides — let the xcconfig handle it
     content = content.replace(/\t\t\t\tCODE_SIGNING_ALLOWED = .*?;\n/g, '');
     content = content.replace(/\t\t\t\tCODE_SIGN_STYLE = .*?;\n/g, '');
+    content = content.replace(/\t\t\t\tCODE_SIGNING_REQUIRED = .*?;\n/g, '');
+    content = content.replace(/\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = .*?;\n/g, '');
+    content = content.replace(/\t\t\t\t'PROVISIONING_PROFILE_SPECIFIER' = .*?;\n/g, '');
     
-    // Inject Manual Style globally
-    content = content.replace(/ProvisioningStyle = Automatic;/g, 'ProvisioningStyle = Manual;');
-    
-    // Add PROVISIONING_PROFILE_SPECIFIER if not present
-    if (!content.includes('PROVISIONING_PROFILE_SPECIFIER')) {
-        // Find the target Release section and add the profile
-        content = content.replace(
-            /(504EC3181FED79650016851F \/\* Release \*\/ = \{[\s\S]*?ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;)/,
-            '$1\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app 1778177425";'
-        );
-    }
+    // Use Automatic provisioning — xcodebuild + match will handle certs
+    content = content.replace(/ProvisioningStyle = Manual;/g, 'ProvisioningStyle = Automatic;');
     
     // Ensure the main project forces the Team ID
     if (content.includes('DevelopmentTeam =')) {

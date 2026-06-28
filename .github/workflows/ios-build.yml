@@ -26,9 +26,6 @@ jobs:
       - name: Sync to iOS
         run: npx cap sync ios
       
-      - name: Fix project signing (post-sync — cap resets pbxproj)
-        run: python3 scripts/fix-pbxproj-signing.py
-      
       - name: Bump build number (prevent Apple duplicate rejection)
         run: python3 scripts/bump-build.py
 
@@ -72,12 +69,14 @@ jobs:
       
       - name: Archive
         run: |
-          AUTOPROV_OPTS="-allowProvisioningUpdates -authenticationKeyPath /tmp/AuthKey.p8 -authenticationKeyID ${{ secrets.ASC_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }}"
+          # Copy match-installed profile from UserData to MobileDevice (where xcodebuild looks)
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
           
-          # Ensure login keychain is unlocked for match-installed certs
+          # Ensure keychain is unlocked
           security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
           
-          # Debug: check what certs are installed
+          # Debug: check certs + profiles
           echo "=== Installed Signing Identities ==="
           security find-identity -v -p codesigning 2>&1 || true
           echo "=== Installed Profiles ==="
@@ -89,10 +88,7 @@ jobs:
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=M6BWMNZQ57 \
-            $AUTOPROV_OPTS
+            -archivePath ./build/App.xcarchive
       
       - name: Export IPA
         run: |

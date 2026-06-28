@@ -14,6 +14,7 @@ if (fs.existsSync(projectPath)) {
     content = content.replace(/\t\t\t\tCODE_SIGNING_ALLOWED = .*?;\n/g, '');
     content = content.replace(/\t\t\t\tCODE_SIGN_STYLE = .*?;\n/g, '');
     content = content.replace(/\t\t\t\tCODE_SIGNING_REQUIRED = .*?;\n/g, '');
+    content = content.replace(/\t\t\t\tCODE_SIGN_IDENTITY = .*?;\n/g, '');
     content = content.replace(/\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = .*?;\n/g, '');
     content = content.replace(/\t\t\t\t'PROVISIONING_PROFILE_SPECIFIER' = .*?;\n/g, '');
     

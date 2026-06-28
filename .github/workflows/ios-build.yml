@@ -57,6 +57,10 @@ jobs:
           # Write API key JSON for Fastlane
           python3 scripts/write_asc_key.py
           
+          # Save p8 key for xcodebuild -allowProvisioningUpdates auth
+          printf '%s\n' "$ASC_KEY_P8" > /tmp/AuthKey.p8
+          chmod 600 /tmp/AuthKey.p8
+          
           # Run match to install certs + profiles (creates match-certs branch on first run)
           fastlane match appstore \
             --git_url "https://analyticalresearchsystemseng-jpg:${GH_PAT}@github.com/analyticalresearchsystemseng-jpg/taxsense.git" \
@@ -71,7 +75,12 @@ jobs:
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive
+            -archivePath ./build/App.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath /tmp/AuthKey.p8 \
+            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} \
+            DEVELOPMENT_TEAM=M6BWMNZQ57
       
       - name: Export IPA
         run: |

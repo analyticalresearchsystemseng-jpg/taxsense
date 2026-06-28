@@ -10,10 +10,7 @@ except FileNotFoundError:
     print("⚠️ pbxproj not found, skipping")
     sys.exit(0)
 
-# Set Manual provisioning at project and target levels
-content = content.replace("ProvisioningStyle = Automatic;", "ProvisioningStyle = Manual;")
-
-# Remove conflicting hardcoded CODE_SIGN_IDENTITY lines
+# Remove any hardcoded signing build settings — they conflict with Manual
 content = re.sub(r'\t{4}CODE_SIGN_IDENTITY = .*?;\n', "", content)
 content = re.sub(r'\t{4}CODE_SIGNING_ALLOWED = .*?;\n', "", content)
 content = re.sub(r'\t{4}CODE_SIGN_STYLE = .*?;\n', "", content)
@@ -21,22 +18,23 @@ content = re.sub(r'\t{4}CODE_SIGNING_REQUIRED = .*?;\n', "", content)
 content = re.sub(r'\t{4}PROVISIONING_PROFILE_SPECIFIER = .*?;\n', "", content)
 content = re.sub(r"\t{4}'PROVISIONING_PROFILE_SPECIFIER' = .*?;\n", "", content)
 
-# Inject profile specifier into the App target's Release build config
-pattern = r'(Release.*?\{[^}]*?ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;)'
-if re.search(pattern, content, re.DOTALL):
-    content = re.sub(
-        pattern,
-        r'\1\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app";',
-        content,
-        count=1,
-        flags=re.DOTALL
-    )
-else:
-    # Fallback: find any Release build settings block and inject
-    content = content.replace(
-        'PRODUCT_BUNDLE_IDENTIFIER = uk.co.taxsense.app;',
-        'PRODUCT_BUNDLE_IDENTIFIER = uk.co.taxsense.app;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app";'
-    )
+# Set Manual provisioning at project and target levels
+content = content.replace("ProvisioningStyle = Automatic;", "ProvisioningStyle = Manual;")
+
+# Inject profile specifier after the SECOND PRODUCT_BUNDLE_IDENTIFIER line (Release)
+count = 0
+def inject_profile(m):
+    global count
+    count += 1
+    if count == 2:
+        return m.group(0) + '\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "match AppStore uk.co.taxsense.app";'
+    return m.group(0)
+
+content = re.sub(
+    r'\t{4}PRODUCT_BUNDLE_IDENTIFIER = uk\.co\.taxsense\.app;',
+    inject_profile,
+    content
+)
 
 with open(path, "w") as f:
     f.write(content)

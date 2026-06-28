@@ -1,0 +1,7 @@
+git_branch "match-certs"
+type "appstore"
+readonly false
+app_identifier ENV["APPLE_BUNDLE_ID"]
+team_id ENV["APPLE_TEAM_ID"]
+skip_docs true
+api_key_path "/tmp/asc_api_key.json"

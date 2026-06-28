@@ -37,24 +37,34 @@ jobs:
           cd ios/App
           pod install --repo-update
       
-      - name: Setup App Store Connect API Key
+      - name: Install Fastlane
+        run: brew install fastlane
+
+      - name: Setup Match & ASC API Key
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: M6BWMNZQ57
+          APPLE_BUNDLE_ID: uk.co.taxsense.app
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           set -e
-          mkdir -p ~/private_keys
-          printf '%s\n' "$ASC_KEY_P8" > ~/private_keys/$ASC_KEY_ID.p8
-          chmod 600 ~/private_keys/$ASC_KEY_ID.p8
-          if head -1 ~/private_keys/$ASC_KEY_ID.p8 | grep -q 'BEGIN PRIVATE KEY'; then
-            echo "✅ ASC API key installed"
-          else
-            echo "❌ Key file invalid"
-            exit 1
-          fi
+          # Install cryptography for ASC key conversion
+          pip3 install cryptography -q 2>/dev/null || true
+          
+          # Write API key JSON for Fastlane
+          python3 scripts/write_asc_key.py
+          
+          # Run match to install certs + profiles (creates match-certs branch on first run)
+          fastlane match appstore \
+            --git_url "https://analyticalresearchsystemseng-jpg:${GH_PAT}@github.com/analyticalresearchsystemseng-jpg/taxsense.git" \
+            --git_branch "match-certs" \
+            --force \
+            --verbose 2>&1
       
-      - name: Archive (automatic signing via ASC API)
+      - name: Archive
         run: |
           cd ios
           xcodebuild archive \
@@ -62,10 +72,9 @@ jobs:
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
             -archivePath ./build/App.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/${{ secrets.ASC_KEY_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }}
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=M6BWMNZQ57 \
+            PRODUCT_BUNDLE_IDENTIFIER=uk.co.taxsense.app
       
       - name: Export IPA
         run: |

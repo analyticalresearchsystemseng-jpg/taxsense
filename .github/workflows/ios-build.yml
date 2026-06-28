@@ -78,7 +78,10 @@ jobs:
             -scheme App \
             -workspace App/App.xcworkspace \
             -destination 'generic/platform=iOS' \
-            -archivePath ./build/App.xcarchive
+            -archivePath ./build/App.xcarchive \
+            'CODE_SIGN_STYLE=Manual' \
+            'PROVISIONING_PROFILE_SPECIFIER=match AppStore uk.co.taxsense.app' \
+            'DEVELOPMENT_TEAM=M6BWMNZQ57'
       
       - name: Export IPA
         run: |
@@ -93,9 +96,14 @@ jobs:
               <key>method</key>
               <string>app-store</string>
               <key>signingStyle</key>
-              <string>automatic</string>
+              <string>manual</string>
               <key>teamID</key>
               <string>M6BWMNZQ57</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>uk.co.taxsense.app</key>
+                  <string>12bc3121-51d8-461a-9b8b-e972f96cea52</string>
+              </dict>
           </dict>
           </plist>
           PLIST

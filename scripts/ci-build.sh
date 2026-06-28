@@ -50,7 +50,16 @@ else:
     print('✅ pbxproj patched (all configs)')
 "
 
-xcodebuild archive -scheme App -workspace App/App.xcworkspace -destination 'generic/platform=iOS' -archivePath ./build/App.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" DEVELOPMENT_TEAM=M6BWMNZQ57 PRODUCT_BUNDLE_IDENTIFIER=uk.co.taxsense.app
+xcodebuild archive -scheme App -workspace App/App.xcworkspace -destination 'generic/platform=iOS' -archivePath ./build/App.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" DEVELOPMENT_TEAM=M6BWMNZQ57 PRODUCT_BUNDLE_IDENTIFIER=uk.co.taxsense.app 2>&1 | tee /tmp/archive.log
+
+# CRITICAL: xcodebuild can return 0 even on build failure
+echo "=== Verify archive exists ==="
+if [ ! -d "./build/App.xcarchive" ] || [ ! -f "./build/App.xcarchive/Products/Applications/App.app/Info.plist" ]; then
+    echo "❌ Archive not produced or incomplete"
+    tail -50 /tmp/archive.log
+    exit 1
+fi
+echo "✅ Archive verified"
 
 echo "=== Export IPA ==="
 mkdir -p build/export
@@ -74,18 +83,19 @@ cat > build/exportOptions.plist << 'PLIST'
 </plist>
 PLIST
 
-xcodebuild -exportArchive -archivePath ./build/App.xcarchive -exportOptionsPlist ./build/exportOptions.plist -exportPath ./build/export
-echo "✅ IPA exported"
+xcodebuild -exportArchive -archivePath ./build/App.xcarchive -exportOptionsPlist ./build/exportOptions.plist -exportPath ./build/export 2>&1 | tee /tmp/export.log
 
-echo "=== Upload to TestFlight ==="
-# Verify IPA exists
+# CRITICAL: export can return 0 but produce nothing
+echo "=== Verify IPA ==="
 if [ ! -f "./build/export/App.ipa" ]; then
     echo "❌ IPA not found at ./build/export/App.ipa"
     ls -la ./build/export/ 2>/dev/null || echo "(directory missing)"
+    tail -50 /tmp/export.log
     exit 1
 fi
-echo "IPA found: $(ls -lh ./build/export/App.ipa)"
+echo "✅ IPA found: $(ls -lh ./build/export/App.ipa)"
 
+echo "=== Upload to TestFlight ==="
 mkdir -p ~/.appstoreconnect/private_keys
 echo "$ASC_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
 chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8

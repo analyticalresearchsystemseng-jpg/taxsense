@@ -98,6 +98,7 @@
 		504EC2FC1FED79650016851F /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				ProvisioningStyle = Manual;
 				DevelopmentTeam = M6BWMNZQ57;
 				LastSwiftUpdateCheck = 920;
 				LastUpgradeCheck = 920;

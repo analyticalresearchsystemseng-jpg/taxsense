@@ -63,9 +63,6 @@ jobs:
           # Also ensure login keychain is in search list (for system certs)
           security list-keychain -d user -s $KEYCHAIN_PATH ~/Library/Keychains/login.keychain-db
       
-      - name: Set pbxproj ProvisioningStyle
-        run: python3 scripts/fix-pbxproj-signing.py
-      
       - name: Setup ASC API Key
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}

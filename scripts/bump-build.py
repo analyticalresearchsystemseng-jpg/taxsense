@@ -27,7 +27,25 @@ content = re.sub(
     content
 )
 
+# Also bump MARKETING_VERSION if the current one is closed on the store.
+# Parses 1.3.9 → 1.3.10 (simple patch-level bump). Adjust as needed.
+ver_matches = re.findall(r'MARKETING_VERSION = ([0-9]+\.[0-9]+\.[0-9]+);', content)
+if ver_matches:
+    old_ver = max(ver_matches)  # lexicographic is fine for semver, use max
+    parts = old_ver.split('.')
+    parts[-1] = str(int(parts[-1]) + 1)
+    new_ver = '.'.join(parts)
+    content = re.sub(
+        r'MARKETING_VERSION = [0-9]+\.[0-9]+\.[0-9]+;',
+        f'MARKETING_VERSION = {new_ver};',
+        content
+    )
+
 with open(PBXPROJ, 'w') as f:
     f.write(content)
 
-print(f"Build: {current} → {new} (updated {len(matches)} occurrences)")
+if ver_matches:
+    print(f"Build: {current} → {new} (updated {len(matches)} occurrences)")
+    print(f"Version: {old_ver} → {new_ver}")
+else:
+    print(f"Build: {current} → {new} (updated {len(matches)} occurrences)")

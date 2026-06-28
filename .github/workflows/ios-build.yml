@@ -60,6 +60,11 @@ jobs:
           UUID=$(openssl cms -in $PP_PATH -inform DER -verify -noverify -out /tmp/profile.plist 2>/dev/null && python3 -c "import plistlib; f=open('/tmp/profile.plist','rb'); print(plistlib.load(f)['UUID'])")
           cp $PP_PATH ~/Library/MobileDevice/"Provisioning Profiles"/$UUID.mobileprovision
           echo "✅ Certificate and profile installed (UUID: $UUID)"
+          # Also ensure login keychain is in search list (for system certs)
+          security list-keychain -d user -s $KEYCHAIN_PATH ~/Library/Keychains/login.keychain-db
+      
+      - name: Set pbxproj ProvisioningStyle
+        run: python3 scripts/fix-pbxproj-signing.py
       
       - name: Setup ASC API Key
         env:

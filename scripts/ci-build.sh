@@ -78,9 +78,17 @@ xcodebuild -exportArchive -archivePath ./build/App.xcarchive -exportOptionsPlist
 echo "✅ IPA exported"
 
 echo "=== Upload to TestFlight ==="
+# Verify IPA exists
+if [ ! -f "./build/export/App.ipa" ]; then
+    echo "❌ IPA not found at ./build/export/App.ipa"
+    ls -la ./build/export/ 2>/dev/null || echo "(directory missing)"
+    exit 1
+fi
+echo "IPA found: $(ls -lh ./build/export/App.ipa)"
+
 mkdir -p ~/.appstoreconnect/private_keys
 echo "$ASC_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
 chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
 
-xcrun altool --upload-app --type ios --file ios/build/export/App.ipa --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+xcrun altool --upload-app --type ios --file ./build/export/App.ipa --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
 echo "✅ Uploaded to TestFlight"

@@ -45,7 +45,7 @@ with open('App/App.xcodeproj/project.pbxproj') as f: c=f.read()
 if 'PROVISIONING_PROFILE_SPECIFIER' not in c:
     c = re.sub(
         r'(PRODUCT_BUNDLE_IDENTIFIER = uk\\.co\\.taxsense\\.app;)',
-        r'\1\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = \"822a9871-6ecc-4fc9-ae2f-098bb79bf314\";',
+        r'\1\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = \"51f2bb69-3e08-4cb8-b426-6729bc081519\";',
         c)
     with open('App/App.xcodeproj/project.pbxproj','w') as f: f.write(c)
     print('pbxproj patched')
@@ -81,7 +81,7 @@ cat > build/exportOptions.plist << 'PLIST'
     <key>teamID</key><string>M6BWMNZQ57</string>
     <key>provisioningProfiles</key>
     <dict>
-        <key>uk.co.taxsense.app</key><string>822a9871-6ecc-4fc9-ae2f-098bb79bf314</string>
+        <key>uk.co.taxsense.app</key><string>51f2bb69-3e08-4cb8-b426-6729bc081519</string>
     </dict>
 </dict>
 </plist>

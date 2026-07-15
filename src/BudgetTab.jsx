@@ -226,7 +226,7 @@ export default function BudgetTab({
           <div style={{ background: 'rgba(244,63,94,0.1)', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid rgba(244,63,94,0.2)' }}>
             <div style={{ fontSize: '0.65rem', opacity: 0.6, marginBottom: '0.25rem' }}>Monthly Outgoings</div>
             <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--error)' }}>£{fmt(budgeted.totalMonthly + variance.totalActual)}</div>
-            <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Budgeted: £{fmt(budgeted.totalMonthly)}</div>
+            <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Budgeted: £{fmt(budgeted.totalMonthly)}{budgeted.savingsContributions > 0 ? ` (inc £${fmt(budgeted.savingsContributions)} savings)` : ''}</div>
           </div>
           <div style={{ background: 'rgba(99,102,241,0.1)', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid rgba(99,102,241,0.2)' }}>
             <div style={{ fontSize: '0.65rem', opacity: 0.6, marginBottom: '0.25rem' }}>Disposable Income</div>

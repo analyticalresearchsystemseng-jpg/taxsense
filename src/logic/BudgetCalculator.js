@@ -33,21 +33,30 @@ export function createDefaultBudgetConfig() {
 }
 
 /**
- * Calculate monthly totals from budgeted items
+ * Calculate monthly totals from budgeted items (including savings contributions)
  */
 export function calculateMonthlyBudget(budgetConfig) {
   const items = budgetConfig?.budgetedItems || [];
+  const savingsAccounts = budgetConfig?.savingsAccounts || [];
   
   const byCategory = {};
   let totalMonthly = 0;
   
+  // Budgeted outgoings
   items.forEach(item => {
     const monthly = item.frequency === 'annual' ? (item.amount || 0) / 12 : (item.amount || 0);
     byCategory[item.category] = (byCategory[item.category] || 0) + monthly;
     totalMonthly += monthly;
   });
 
-  return { byCategory, totalMonthly, itemCount: items.length };
+  // Savings contributions (treated as budgeted outgoings — they reduce disposable income)
+  const savingsTotal = savingsAccounts.reduce((s, a) => s + Number(a.monthlyContribution || 0), 0);
+  if (savingsTotal > 0) {
+    byCategory['savings'] = (byCategory['savings'] || 0) + savingsTotal;
+    totalMonthly += savingsTotal;
+  }
+
+  return { byCategory, totalMonthly, itemCount: items.length, savingsContributions: savingsTotal };
 }
 
 /**

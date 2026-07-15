@@ -16,8 +16,8 @@ if not matches:
 
 current = max(int(m) for m in matches)
 # Use timestamp-based increment to avoid duplicate collisions with Apple
-# Increment by at least 10, plus a small time-based offset to guarantee uniqueness
-increment = 10 + (int(time.time()) % 10)
+# Increment by at least 100, plus a small time-based offset to guarantee uniqueness
+increment = 100 + (int(time.time()) % 10)
 new = current + increment
 
 # Replace ALL occurrences (Debug and Release configs)

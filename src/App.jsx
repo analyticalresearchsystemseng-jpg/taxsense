@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
-import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, ClipboardList, X, ChevronRight, ChevronDown, CloudUpload, CloudDownload, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, ClipboardList, X, ChevronRight, ChevronDown, CloudUpload, CloudDownload, AlertCircle, Wallet } from 'lucide-react';
 import { calculateTax, calculateCumulativeTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
 import { getProfiles, saveProfiles, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
 import PurchaseService from './services/PurchaseService';
@@ -11,6 +11,7 @@ import SetupWizard from './SetupWizard';
 import FullGuideModal from './FullGuideModal';
 import GettingStartedModal from './GettingStartedModal';
 import { calculateSEProfit, calculateMileageAllowance, calculateSelfAssessment } from './logic/SelfAssessmentCalculator';
+import BudgetTab from './BudgetTab';
 
 const MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
 const getCurrentTaxYear = () => {
@@ -454,6 +455,8 @@ function App() {
   const [showGettingStarted, setShowGettingStarted] = useState(false);
   const [leaseConfig, setLeaseConfig] = useState({ startDate: '', termMonths: 36, totalAllowedMiles: 30000 });
   const [mileageLogs, setMileageLogs] = useState([]);
+  const [budgetConfig, setBudgetConfig] = useState({ budgetedItems: [], savingsAccounts: [] });
+  const [budgetActuals, setBudgetActuals] = useState(Array(12).fill(null).map(() => ({ spends: [] })));
   const [chartKey, setChartKey] = useState(0);
   const [activeHelperId, setActiveHelperId] = useState(null);
   const [activeHelperText, setActiveHelperText] = useState(null);
@@ -490,7 +493,9 @@ function App() {
     hasCompletedTour: true,
     leaseConfig: { startDate: '', termMonths: 36, totalAllowedMiles: 30000 },
     mileageLogs: [],
-    subscriptionTier: 'free'
+    subscriptionTier: 'free',
+    budgetConfig: { budgetedItems: [], savingsAccounts: [] },
+    budgetActuals: Array(12).fill(null).map(() => ({ spends: [] })),
   }), []);
 
   const resetAllStates = useCallback(() => {
@@ -533,6 +538,8 @@ function App() {
     setSubscriptionTier(prof.subscriptionTier || (prof.isPremium ? 'annual' : 'free')); 
     setLeaseConfig(prof.leaseConfig || { startDate: '', termMonths: 36, totalAllowedMiles: 30000 });
     setMileageLogs(prof.mileageLogs || []);
+    setBudgetConfig(prof.budgetConfig || { budgetedItems: [], savingsAccounts: [] });
+    setBudgetActuals(prof.budgetActuals || Array(12).fill(null).map(() => ({ spends: [] })));
   }, []);
 
 
@@ -887,7 +894,7 @@ function App() {
       const activeData = {
         taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent,
         taxYear, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months,
-        workMode, seData, hasCompletedTour, leaseConfig, mileageLogs
+        workMode, seData, hasCompletedTour, leaseConfig, mileageLogs, budgetConfig, budgetActuals
       };
 
       // Simple hash check to prevent redundant saves (and loops)
@@ -2257,6 +2264,19 @@ function App() {
 
         {activeTab === 'guide' && <GuideTab taxYear={taxYear} workMode={workMode} />}
 
+        {activeTab === 'budget' && (
+          <BudgetTab
+            budgetConfig={budgetConfig}
+            onUpdateBudgetConfig={setBudgetConfig}
+            budgetActuals={budgetActuals}
+            onUpdateBudgetActuals={setBudgetActuals}
+            netMonthlyPay={totalMonthlyNet}
+            activeHelperId={activeHelperId}
+            setActiveHelperId={setActiveHelperId}
+            setActiveText={setActiveHelperText}
+          />
+        )}
+
         {activeTab === 'overtime' && (
           <div id="ot-report-content">
             <div className="glass-card" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
@@ -2873,6 +2893,10 @@ function App() {
             <span>Guide</span>
           </div>
         )}
+        <div className={`nav-item ${activeTab === 'budget' ? 'active' : ''}`} onClick={() => setActiveTab('budget')}>
+          <Wallet size={20} />
+          <span>Budget</span>
+        </div>
         <div className={`nav-item ${activeTab === 'config' ? 'active' : ''}`} onClick={() => setActiveTab('config')}>
           <Settings size={20} />
           <span>Settings</span>

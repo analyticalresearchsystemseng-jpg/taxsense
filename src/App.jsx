@@ -456,7 +456,6 @@ function App() {
   const [leaseConfig, setLeaseConfig] = useState({ startDate: '', termMonths: 36, totalAllowedMiles: 30000 });
   const [mileageLogs, setMileageLogs] = useState([]);
   const [budgetConfig, setBudgetConfig] = useState({ budgetedItems: [], savingsAccounts: [] });
-  const [budgetActuals, setBudgetActuals] = useState(Array(12).fill(null).map(() => ({ spends: [] })));
   const [chartKey, setChartKey] = useState(0);
   const [activeHelperId, setActiveHelperId] = useState(null);
   const [activeHelperText, setActiveHelperText] = useState(null);
@@ -495,7 +494,6 @@ function App() {
     mileageLogs: [],
     subscriptionTier: 'free',
     budgetConfig: { budgetedItems: [], savingsAccounts: [] },
-    budgetActuals: Array(12).fill(null).map(() => ({ spends: [] })),
   }), []);
 
   const resetAllStates = useCallback(() => {
@@ -539,7 +537,6 @@ function App() {
     setLeaseConfig(prof.leaseConfig || { startDate: '', termMonths: 36, totalAllowedMiles: 30000 });
     setMileageLogs(prof.mileageLogs || []);
     setBudgetConfig(prof.budgetConfig || { budgetedItems: [], savingsAccounts: [] });
-    setBudgetActuals(prof.budgetActuals || Array(12).fill(null).map(() => ({ spends: [] })));
   }, []);
 
 
@@ -894,7 +891,7 @@ function App() {
       const activeData = {
         taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent,
         taxYear, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months,
-        workMode, seData, hasCompletedTour, leaseConfig, mileageLogs, budgetConfig, budgetActuals
+        workMode, seData, hasCompletedTour, leaseConfig, mileageLogs, budgetConfig
       };
 
       // Simple hash check to prevent redundant saves (and loops)
@@ -2268,12 +2265,7 @@ function App() {
           <BudgetTab
             budgetConfig={budgetConfig}
             onUpdateBudgetConfig={setBudgetConfig}
-            budgetActuals={budgetActuals}
-            onUpdateBudgetActuals={setBudgetActuals}
             netMonthlyPay={totalMonthlyNet}
-            activeHelperId={activeHelperId}
-            setActiveHelperId={setActiveHelperId}
-            setActiveText={setActiveHelperText}
           />
         )}
 

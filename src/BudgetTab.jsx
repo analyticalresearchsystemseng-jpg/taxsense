@@ -1,15 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, Home, Zap, Car, ShoppingCart, Radio, CreditCard, Smile, PiggyBank, MoreHorizontal, TrendingUp, ChevronRight, ChevronDown, Download, Info, Wallet, Target, DollarSign, Layers, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Plus, Trash2, Home, Zap, Car, ShoppingCart, Radio, CreditCard, Smile, PiggyBank, MoreHorizontal, TrendingUp, Info, Wallet, Target, Layers, X } from 'lucide-react';
 import {
   BUDGET_CATEGORIES,
   calculateMonthlyBudget,
-  calculateMonthlyActuals,
-  calculateVariance,
   calculateSavingsOverview,
-  calculateAnnualBudgetProjection,
 } from './logic/BudgetCalculator';
-
-const MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
 
 const fmt = (n, dp = 2) => Number(n || 0).toLocaleString('en-GB', { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
@@ -37,110 +32,43 @@ const categoryColors = {
   other: '#6b7280',
 };
 
-const HelperInfo = ({ id, text, activeId, setActiveId, setActiveText }) => {
-  const isOpen = activeId === id;
-  return (
-    <div style={{ display: 'inline-block', marginLeft: '0.4rem', verticalAlign: 'middle', position: 'relative' }}>
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); setActiveId(isOpen ? null : id); if (!isOpen) setActiveText(text); }}
-        className="btn-icon"
-        style={{ color: isOpen ? 'var(--primary)' : 'var(--text-muted)', opacity: isOpen ? 1 : 0.6, background: isOpen ? 'var(--primary-light)' : 'transparent', padding: '4px', borderRadius: '6px', transition: 'all 0.2s' }}
-        title="More Information"
-      >
-        <Info size={18} />
-      </button>
-    </div>
-  );
-};
-
-const DonutChart = ({ data }) => {
-  const total = data.reduce((s, i) => s + i.value, 0);
-  if (total === 0) return <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.4 }}>No data</div>;
-  const getCoords = (p) => [Math.cos(2 * Math.PI * p), Math.sin(2 * Math.PI * p)];
-  return (
-    <svg viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)', width: '100%', maxWidth: '200px', margin: '0 auto', display: 'block' }}>
-      {data.map((slice, i) => {
-        const sliceP = slice.value / total;
-        const startP = data.slice(0, i).reduce((s, item) => s + (item.value / total), 0);
-        const endP = startP + sliceP;
-        const [sx, sy] = getCoords(startP);
-        const [ex, ey] = getCoords(endP);
-        const large = sliceP > 0.5 ? 1 : 0;
-        return <path key={i} d={`M ${sx} ${sy} A 1 1 0 ${large} 1 ${ex} ${ey} L 0 0`} fill={slice.color} stroke="var(--bg-dark)" strokeWidth="0.01" />;
-      })}
-      <circle cx="0" cy="0" r="0.6" fill="var(--bg-dark)" />
-    </svg>
-  );
-};
-
 export default function BudgetTab({
   budgetConfig,
   onUpdateBudgetConfig,
-  budgetActuals,
-  onUpdateBudgetActuals,
   netMonthlyPay,
-  activeHelperId,
-  setActiveHelperId,
-  setActiveText,
 }) {
-  const [subTab, setSubTab] = useState('overview'); // overview, budget, savings, tracking
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    let idx = now.getMonth() - 3;
-    return idx < 0 ? idx + 12 : idx;
-  });
+  const [subTab, setSubTab] = useState('overview');
   const [showItemModal, setShowItemModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [modalData, setModalData] = useState(null);
-  const [showSpendModal, setShowSpendModal] = useState(false);
-  const [spendModalData, setSpendModalData] = useState(null);
 
   const items = budgetConfig?.budgetedItems || [];
   const accounts = budgetConfig?.savingsAccounts || [];
-  const actuals = budgetActuals || Array(12).fill(null).map(() => ({ spends: [] }));
 
-  // --- Helpers ---
   const updateBudgetConfig = (updates) => {
     onUpdateBudgetConfig({ ...(budgetConfig || {}), ...updates });
   };
 
-  const updateActualsForMonth = (monthIdx, newSpends) => {
-    const updated = [...actuals];
-    updated[monthIdx] = { ...updated[monthIdx], spends: newSpends };
-    onUpdateBudgetActuals(updated);
-  };
-
-  // --- Calculations ---
   const budgeted = useMemo(() => calculateMonthlyBudget(budgetConfig), [budgetConfig]);
-  const variance = useMemo(() => calculateVariance(budgetConfig, actuals, selectedMonth), [budgetConfig, actuals, selectedMonth]);
   const savingsOverview = useMemo(() => calculateSavingsOverview(accounts), [accounts]);
-  const annualProjection = useMemo(() => calculateAnnualBudgetProjection(budgetConfig, actuals), [budgetConfig, actuals]);
-  const monthlyDisposable = netMonthlyPay - budgeted.totalMonthly - variance.totalActual;
-  const totalAnnualOutgoings = (budgeted.totalMonthly * 12) + (variance.totalActual > 0 ? (variance.totalActual / (actuals.filter(m => m?.spends?.length > 0).length || 1)) * 12 : 0);
+  const monthlyDisposable = netMonthlyPay - budgeted.totalMonthly;
+  const annualSurplus = (netMonthlyPay * 12) - (budgeted.totalMonthly * 12);
 
   // --- Handlers ---
   const openAddItem = () => {
     setModalData({ id: null, name: '', category: 'other', amount: '', frequency: 'monthly' });
     setShowItemModal(true);
   };
-
   const openEditItem = (item) => {
     setModalData({ ...item });
     setShowItemModal(true);
   };
-
   const saveItem = () => {
-    const idToUse = modalData.id || Date.now().toString();
-    const newItem = { id: idToUse, name: modalData.name || 'Unnamed', category: modalData.category, amount: Number(modalData.amount) || 0, frequency: modalData.frequency };
-    if (modalData.id) {
-      updateBudgetConfig({ budgetedItems: items.map(i => i.id === idToUse ? newItem : i) });
-    } else {
-      updateBudgetConfig({ budgetedItems: [...items, newItem] });
-    }
+    const id = modalData.id || Date.now().toString();
+    const item = { id, name: modalData.name || 'Unnamed', category: modalData.category, amount: Number(modalData.amount) || 0, frequency: modalData.frequency };
+    updateBudgetConfig({ budgetedItems: modalData.id ? items.map(i => i.id === id ? item : i) : [...items, item] });
     setShowItemModal(false);
   };
-
   const removeItem = (id) => {
     updateBudgetConfig({ budgetedItems: items.filter(i => i.id !== id) });
     setShowItemModal(false);
@@ -150,59 +78,21 @@ export default function BudgetTab({
     setModalData({ id: null, name: '', balance: '', monthlyContribution: '', goal: '' });
     setShowAccountModal(true);
   };
-
   const openEditAccount = (acct) => {
     setModalData({ ...acct });
     setShowAccountModal(true);
   };
-
   const saveAccount = () => {
-    const idToUse = modalData.id || Date.now().toString();
-    const newAccount = { id: idToUse, name: modalData.name || 'Account', balance: Number(modalData.balance) || 0, monthlyContribution: Number(modalData.monthlyContribution) || 0, goal: Number(modalData.goal) || 0 };
-    if (modalData.id) {
-      updateBudgetConfig({ savingsAccounts: accounts.map(a => a.id === idToUse ? newAccount : a) });
-    } else {
-      updateBudgetConfig({ savingsAccounts: [...accounts, newAccount] });
-    }
+    const id = modalData.id || Date.now().toString();
+    const acct = { id, name: modalData.name || 'Account', balance: Number(modalData.balance) || 0, monthlyContribution: Number(modalData.monthlyContribution) || 0, goal: Number(modalData.goal) || 0 };
+    updateBudgetConfig({ savingsAccounts: modalData.id ? accounts.map(a => a.id === id ? acct : a) : [...accounts, acct] });
     setShowAccountModal(false);
   };
-
   const removeAccount = (id) => {
     updateBudgetConfig({ savingsAccounts: accounts.filter(a => a.id !== id) });
     setShowAccountModal(false);
   };
 
-  const openAddSpend = () => {
-    setSpendModalData({ id: null, budgetItemId: items[0]?.id || '', amount: '' });
-    setShowSpendModal(true);
-  };
-
-  const openEditSpend = (spend) => {
-    setSpendModalData({ ...spend });
-    setShowSpendModal(true);
-  };
-
-  const saveSpend = () => {
-    const idToUse = spendModalData.id || Date.now().toString();
-    const newSpend = { id: idToUse, budgetItemId: spendModalData.budgetItemId, amount: Number(spendModalData.amount) || 0 };
-    const currentSpends = actuals[selectedMonth]?.spends || [];
-    let updatedSpends;
-    if (spendModalData.id) {
-      updatedSpends = currentSpends.map(s => s.id === idToUse ? newSpend : s);
-    } else {
-      updatedSpends = [...currentSpends, newSpend];
-    }
-    updateActualsForMonth(selectedMonth, updatedSpends);
-    setShowSpendModal(false);
-  };
-
-  const removeSpend = (id) => {
-    const currentSpends = actuals[selectedMonth]?.spends || [];
-    updateActualsForMonth(selectedMonth, currentSpends.filter(s => s.id !== id));
-    setShowSpendModal(false);
-  };
-
-  // --- Sub-tabs ---
   const subTabs = [
     { id: 'overview', label: 'Overview', icon: <TrendingUp size={16} /> },
     { id: 'budget', label: 'Budget', icon: <Layers size={16} /> },
@@ -225,13 +115,13 @@ export default function BudgetTab({
           </div>
           <div style={{ background: 'rgba(244,63,94,0.1)', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid rgba(244,63,94,0.2)' }}>
             <div style={{ fontSize: '0.65rem', opacity: 0.6, marginBottom: '0.25rem' }}>Monthly Outgoings</div>
-            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--error)' }}>£{fmt(budgeted.totalMonthly + variance.totalActual)}</div>
-            <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Budgeted: £{fmt(budgeted.totalMonthly)}{budgeted.savingsContributions > 0 ? ` (inc £${fmt(budgeted.savingsContributions)} savings)` : ''}</div>
+            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--error)' }}>£{fmt(budgeted.totalMonthly)}</div>
+            <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Inc savings: £{fmt(budgeted.savingsContributions)}/mo</div>
           </div>
           <div style={{ background: 'rgba(99,102,241,0.1)', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid rgba(99,102,241,0.2)' }}>
             <div style={{ fontSize: '0.65rem', opacity: 0.6, marginBottom: '0.25rem' }}>Disposable Income</div>
             <div style={{ fontWeight: 800, fontSize: '1.1rem', color: monthlyDisposable >= 0 ? 'var(--success)' : 'var(--error)' }}>£{fmt(monthlyDisposable)}</div>
-            <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Net after all outgoings</div>
+            <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>After all outgoings + savings</div>
           </div>
           <div style={{ background: 'rgba(251,191,36,0.1)', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid rgba(251,191,36,0.2)' }}>
             <div style={{ fontSize: '0.65rem', opacity: 0.6, marginBottom: '0.25rem' }}>Savings Total</div>
@@ -242,7 +132,7 @@ export default function BudgetTab({
       </div>
 
       {/* Sub-tab nav */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'rgba(0,0,0,0.15)', borderRadius: '0.75rem', padding: '0.25rem', overflowX: 'auto', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'rgba(0,0,0,0.15)', borderRadius: '0.75rem', padding: '0.25rem' }}>
         {subTabs.map(t => (
           <button key={t.id} onClick={() => setSubTab(t.id)}
             style={{ flex: 1, padding: '0.6rem 0.25rem', background: subTab === t.id ? 'var(--primary)' : 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', color: subTab === t.id ? 'white' : 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '0.78rem', fontWeight: subTab === t.id ? 700 : 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', transition: 'all 0.15s ease' }}
@@ -252,10 +142,9 @@ export default function BudgetTab({
         ))}
       </div>
 
-      {/* === OVERVIEW TAB === */}
+      {/* === OVERVIEW === */}
       {subTab === 'overview' && (
         <div>
-          {/* Disposable income card */}
           <div className="glass-card" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(16,185,129,0.05) 100%)' }}>
             <h3 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <TrendingUp size={18} color="var(--primary)" /> Your Financial Picture
@@ -267,9 +156,9 @@ export default function BudgetTab({
                 <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Take-home pay</div>
               </div>
               <div style={{ textAlign: 'center', padding: '1rem', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
-                <div style={{ fontSize: '0.7rem', opacity: 0.5, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Monthly Outgoings</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--error)' }}>£{fmt(budgeted.totalMonthly + variance.totalActual)}</div>
-                <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Budgeted: £{fmt(budgeted.totalMonthly)}</div>
+                <div style={{ fontSize: '0.7rem', opacity: 0.5, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Total Outgoings</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--error)' }}>£{fmt(budgeted.totalMonthly)}</div>
+                <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Inc £{fmt(budgeted.savingsContributions)} savings</div>
               </div>
               <div style={{ textAlign: 'center', padding: '1rem', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
                 <div style={{ fontSize: '0.7rem', opacity: 0.5, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Disposable</div>
@@ -279,7 +168,6 @@ export default function BudgetTab({
             </div>
           </div>
 
-          {/* Annual projection */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="glass-card">
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -287,24 +175,21 @@ export default function BudgetTab({
               </h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.5rem', opacity: 0.7 }}>
                 <span>Projected Outgoings</span>
-                <span>£{fmt(annualProjection.annualBudgeted)}</span>
+                <span>£{fmt(budgeted.totalMonthly * 12)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', opacity: 0.7 }}>
                 <span>Income (Annual Net)</span>
                 <span>£{fmt(netMonthlyPay * 12)}</span>
               </div>
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '0.75rem', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 700 }}>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: '0.75rem', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 700 }}>
                 <span>Annual Surplus</span>
-                <span style={{ color: (netMonthlyPay * 12 - annualProjection.annualBudgeted) >= 0 ? 'var(--success)' : 'var(--error)' }}>
-                  £{fmt(netMonthlyPay * 12 - annualProjection.annualBudgeted)}
-                </span>
+                <span style={{ color: annualSurplus >= 0 ? 'var(--success)' : 'var(--error)' }}>£{fmt(annualSurplus)}</span>
               </div>
             </div>
 
-            {/* Category breakdown */}
             <div className="glass-card">
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Layers size={16} color="var(--primary)" /> Budget Breakdown
+                <Layers size={16} color="var(--primary)" /> Monthly Breakdown
               </h3>
               {Object.keys(budgeted.byCategory).length === 0 && (
                 <p style={{ fontSize: '0.8rem', opacity: 0.4, textAlign: 'center', padding: '1rem' }}>
@@ -331,113 +216,52 @@ export default function BudgetTab({
         </div>
       )}
 
-      {/* === BUDGET TAB === */}
+      {/* === BUDGET === */}
       {subTab === 'budget' && (
-        <div>
-          {/* Budgeted items */}
-          <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Layers size={16} color="var(--primary)" /> Budgeted Outgoings
-              </h3>
-              <button className="btn-add" onClick={openAddItem}><Plus size={16} /></button>
-            </div>
-            {items.length === 0 && (
-              <p style={{ opacity: 0.4, textAlign: 'center', padding: '1.5rem 0' }}>No budget items. Tap + to add your outgoings.</p>
-            )}
-            {items.map(item => (
-              <div key={item.id} className="overtime-line glass-card clickable" style={{ borderLeft: `4px solid ${categoryColors[item.category] || '#6b7280'}`, marginBottom: '0.75rem', padding: '0.75rem', cursor: 'pointer' }}
-                onClick={() => openEditItem(item)}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: categoryColors[item.category] || '#6b7280' }}>{categoryIcons[item.category] || <MoreHorizontal size={16} />}</span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{item.name}</div>
-                      <div style={{ fontSize: '0.7rem', opacity: 0.5 }}>{BUDGET_CATEGORIES.find(c => c.value === item.category)?.label || item.category} • {item.frequency === 'annual' ? 'Annual' : 'Monthly'}</div>
-                    </div>
-                  </div>
-                  <div style={{ fontWeight: 700, color: 'var(--error)', fontSize: '1rem' }}>-£{fmt(item.amount)}</div>
-                </div>
-              </div>
-            ))}
+        <div className="glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Layers size={16} color="var(--primary)" /> Monthly Outgoings
+            </h3>
+            <button className="btn-add" onClick={openAddItem}><Plus size={16} /></button>
           </div>
-
-          {/* Month selector + Actuals tracking */}
-          <div className="glass-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <TrendingUp size={16} color="var(--primary)" /> Actual Spends — {MONTHS[selectedMonth]}
-              </h3>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <select className="input-field" style={{ width: 'auto', padding: '0.3rem', fontSize: '0.8rem' }} value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}>
-                  {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-                </select>
-                <button className="btn-add" onClick={openAddSpend} disabled={items.length === 0} title={items.length === 0 ? 'Add budget items first' : 'Log spend'}><Plus size={16} /></button>
+          {items.length === 0 && (
+            <p style={{ opacity: 0.4, textAlign: 'center', padding: '1.5rem 0' }}>No outgoings set. Tap + to add mortgage, bills, subscriptions, etc.</p>
+          )}
+          {items.map(item => (
+            <div key={item.id} className="overtime-line glass-card clickable" style={{ borderLeft: `4px solid ${categoryColors[item.category] || '#6b7280'}`, marginBottom: '0.75rem', padding: '0.75rem', cursor: 'pointer' }}
+              onClick={() => openEditItem(item)}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: categoryColors[item.category] || '#6b7280' }}>{categoryIcons[item.category] || <MoreHorizontal size={16} />}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{item.name}</div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.5 }}>{BUDGET_CATEGORIES.find(c => c.value === item.category)?.label || item.category} • {item.frequency === 'annual' ? 'Annual' : 'Monthly'}</div>
+                  </div>
+                </div>
+                <div style={{ fontWeight: 700, color: 'var(--error)', fontSize: '1rem' }}>-£{fmt(item.amount)}</div>
               </div>
             </div>
-
-            {/* Variance summary */}
-            {(variance.totalBudgeted > 0 || variance.totalActual > 0) && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem', marginBottom: '1rem', padding: '0.75rem', background: 'rgba(0,0,0,0.1)', borderRadius: '0.5rem' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Budgeted</div>
-                  <div style={{ fontWeight: 700 }}>£{fmt(variance.totalBudgeted)}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Actual</div>
-                  <div style={{ fontWeight: 700 }}>£{fmt(variance.totalActual)}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Variance</div>
-                  <div style={{ fontWeight: 700, color: variance.isOverbudget ? 'var(--error)' : 'var(--success)' }}>
-                    {variance.isOverbudget ? '+' : ''}£{fmt(variance.totalVariance)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Spends list */}
-            {(actuals[selectedMonth]?.spends || []).length === 0 && (
-              <p style={{ opacity: 0.4, textAlign: 'center', padding: '1rem 0', fontSize: '0.85rem' }}>No spends logged for {MONTHS[selectedMonth]}. Tap + to add one.</p>
-            )}
-            {(actuals[selectedMonth]?.spends || []).map(spend => {
-              const budgetItem = items.find(i => i.id === spend.budgetItemId);
-              const budgetedAmount = budgetItem ? (budgetItem.frequency === 'annual' ? (budgetItem.amount || 0) / 12 : (budgetItem.amount || 0)) : 0;
-              const actualAmt = Number(spend.amount) || 0;
-              const diff = actualAmt - budgetedAmount;
-              return (
-                <div key={spend.id} className="overtime-line glass-card clickable" style={{ borderLeft: `4px solid ${diff > 0 ? 'var(--error)' : 'var(--success)'}`, marginBottom: '0.6rem', padding: '0.65rem', cursor: 'pointer' }}
-                  onClick={() => openEditSpend(spend)}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {budgetItem && <span style={{ color: categoryColors[budgetItem.category] || '#6b7280' }}>{categoryIcons[budgetItem.category] || <MoreHorizontal size={14} />}</span>}
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{budgetItem?.name || 'Unknown'}</div>
-                        <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Budget: £{fmt(budgetedAmount)}</div>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>£{fmt(actualAmt)}</div>
-                      {diff !== 0 && (
-                        <div style={{ fontSize: '0.65rem', color: diff > 0 ? 'var(--error)' : 'var(--success)', fontWeight: 600 }}>
-                          {diff > 0 ? '+' : ''}£{fmt(diff)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          ))}
+          {items.length > 0 && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: '0.5rem', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem' }}>
+              <span>Total Monthly</span>
+              <span style={{ color: 'var(--error)' }}>£{fmt(budgeted.totalMonthly - budgeted.savingsContributions)}</span>
+            </div>
+          )}
+          {budgeted.savingsContributions > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', paddingTop: '0.25rem', opacity: 0.7 }}>
+              <span>Savings contributions</span>
+              <span>£{fmt(budgeted.savingsContributions)}</span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* === SAVINGS TAB === */}
+      {/* === SAVINGS === */}
       {subTab === 'savings' && (
         <div>
-          {/* Savings summary */}
           <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -492,7 +316,6 @@ export default function BudgetTab({
             })}
           </div>
 
-          {/* Projection */}
           {savingsOverview.totalMonthly > 0 && (
             <div className="glass-card">
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -515,7 +338,7 @@ export default function BudgetTab({
         </div>
       )}
 
-      {/* === ITEM MODAL === */}
+      {/* === OUTGOING MODAL === */}
       {showItemModal && (
         <div className="modal-overlay" onClick={() => setShowItemModal(false)}>
           <div className="modal-content glass-card" onClick={e => e.stopPropagation()}>
@@ -600,42 +423,6 @@ export default function BudgetTab({
               )}
               <button className="btn-primary" style={{ flex: 1 }} onClick={saveAccount}>
                 {modalData.id ? 'Save Changes' : 'Add Account'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* === SPEND MODAL === */}
-      {showSpendModal && (
-        <div className="modal-overlay" onClick={() => setShowSpendModal(false)}>
-          <div className="modal-content glass-card" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0 }}>{spendModalData.id ? 'Edit Spend' : 'Log Actual Spend'}</h2>
-              <button className="btn-icon" onClick={() => setShowSpendModal(false)}><X size={24} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label className="stat-label">Category</label>
-                <select className="input-field" value={spendModalData.budgetItemId} onChange={e => setSpendModalData({ ...spendModalData, budgetItemId: e.target.value })}>
-                  {items.map(item => (
-                    <option key={item.id} value={item.id}>{item.name} (Budget: £{fmt(item.frequency === 'annual' ? (item.amount || 0) / 12 : (item.amount || 0))})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="stat-label">Actual Amount (£)</label>
-                <input type="number" className="input-field" value={spendModalData.amount} onChange={e => setSpendModalData({ ...spendModalData, amount: e.target.value })} placeholder="0" />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-              {spendModalData.id && (
-                <button className="btn-secondary" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => removeSpend(spendModalData.id)}>
-                  Delete
-                </button>
-              )}
-              <button className="btn-primary" style={{ flex: 1 }} onClick={saveSpend}>
-                {spendModalData.id ? 'Save Changes' : 'Add Spend'}
               </button>
             </div>
           </div>

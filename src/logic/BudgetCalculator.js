@@ -8,7 +8,6 @@ export const BUDGET_CATEGORIES = [
   { value: 'subscriptions', label: 'Subscriptions', icon: 'Radio', examples: 'Streaming, gym, phone, software' },
   { value: 'debt', label: 'Debt', icon: 'CreditCard', examples: 'Loan payment, credit card, overdraft' },
   { value: 'discretionary', label: 'Discretionary', icon: 'Smile', examples: 'Eating out, hobbies, shopping' },
-  { value: 'savings', label: 'Savings', icon: 'PiggyBank', examples: 'Monthly savings contributions' },
   { value: 'other', label: 'Other', icon: 'MoreHorizontal', examples: 'Anything else' },
 ];
 

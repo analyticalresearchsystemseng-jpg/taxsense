@@ -15,10 +15,12 @@ if not matches:
     sys.exit(1)
 
 current = max(int(m) for m in matches)
-# Use timestamp-based increment to avoid duplicate collisions with Apple
-# Increment by at least 100, plus a small time-based offset to guarantee uniqueness
-increment = 100 + (int(time.time()) % 10)
-new = current + increment
+# Use Unix timestamp as build number — always unique and ever-increasing
+# Ensures every build gets a fresh number never used before
+import time
+new = int(time.time()) % 1000000  # Last 6 digits of timestamp — ~1.7M range, unique per-second
+if new <= current:
+    new = current + 1  # Safe fallback
 
 # Replace ALL occurrences (Debug and Release configs)
 content = re.sub(

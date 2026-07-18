@@ -928,7 +928,7 @@ function App() {
     }, 2000); // 2s debounce for stability
 
     return () => clearTimeout(timeoutIdx);
-  }, [taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months, workMode, seData, hasCompletedTour, isLoaded, taxYear, leaseConfig, mileageLogs, profiles]);
+  }, [taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months, workMode, seData, hasCompletedTour, isLoaded, taxYear, leaseConfig, mileageLogs, budgetConfig, profiles]);
 
   // Switch Year Handler
   const handleYearSwitch = (newYear) => {

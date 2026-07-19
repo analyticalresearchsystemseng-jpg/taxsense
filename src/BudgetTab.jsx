@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, Home, Zap, Car, ShoppingCart, Radio, CreditCard, Smile, PiggyBank, MoreHorizontal, TrendingUp, Info, Wallet, Target, Layers, X } from 'lucide-react';
+import { Plus, Trash2, Home, Zap, Car, ShoppingCart, Radio, CreditCard, Smile, PiggyBank, MoreHorizontal, TrendingUp, Info, Wallet, Target, Layers, X, Download } from 'lucide-react';
 import {
   BUDGET_CATEGORIES,
   calculateMonthlyBudget,
   calculateSavingsOverview,
 } from './logic/BudgetCalculator';
+import { exportBudgetPDF } from './logic/BudgetPDFExport';
 
 const fmt = (n, dp = 2) => Number(n || 0).toLocaleString('en-GB', { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
@@ -148,6 +149,13 @@ export default function BudgetTab({
           <div className="glass-card" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(16,185,129,0.05) 100%)' }}>
             <h3 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <TrendingUp size={18} color="var(--primary)" /> Your Financial Picture
+              <button
+                onClick={() => exportBudgetPDF(budgetConfig, netMonthlyPay)}
+                style={{ marginLeft: 'auto', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '0.5rem', color: 'var(--primary)', cursor: 'pointer', padding: '0.35rem 0.7rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}
+                title="Export PDF for mortgage applications"
+              >
+                <Download size={14} /> Export PDF
+              </button>
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div style={{ textAlign: 'center', padding: '1rem' }}>

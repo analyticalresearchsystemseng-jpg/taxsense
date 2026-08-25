@@ -36,7 +36,8 @@ jobs:
         working-directory: android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew packageDebug --info 2>&1 | tail -80
+          ls -la app/build/outputs/apk/debug/
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

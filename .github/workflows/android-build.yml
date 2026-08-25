@@ -36,34 +36,29 @@ jobs:
         working-directory: android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew clean assembleDebug
           ls -la app/build/outputs/apk/debug/
 
-      - name: Zipalign and sign APK
+      - name: Verify APK signing
         working-directory: android
         run: |
-          # Find SDK build-tools
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          echo "Using build-tools: $BUILD_TOOLS"
+          "$BUILD_TOOLS/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk || echo "WARNING: APK not signed by AGP, signing manually..."
           
-          # Zipalign
-          "$BUILD_TOOLS/zipalign" -f -v 4 app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/app-debug-signed.apk
-          
-          # Generate debug keystore
-          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>/dev/null || true
-          
-          # Sign with apksigner
-          "$BUILD_TOOLS/apksigner" sign --ks debug.keystore --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android app/build/outputs/apk/debug/app-debug-signed.apk
-          
-          # Verify
-          "$BUILD_TOOLS/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug-signed.apk
-          
-          echo "Signed APK:"
-          ls -la app/build/outputs/apk/debug/
+          if ! "$BUILD_TOOLS/apksigner" verify app/build/outputs/apk/debug/app-debug.apk 2>/dev/null; then
+            echo "AGP did not sign — signing manually with apksigner..."
+            "$BUILD_TOOLS/zipalign" -f 4 app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/app-debug-aligned.apk
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>/dev/null || true
+            "$BUILD_TOOLS/apksigner" sign --ks debug.keystore --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android app/build/outputs/apk/debug/app-debug-aligned.apk
+            "$BUILD_TOOLS/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug-aligned.apk
+            cp app/build/outputs/apk/debug/app-debug-aligned.apk app/build/outputs/apk/debug/app-debug.apk
+          fi
+          echo "Final APK:"
+          ls -la app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: taxsense-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug-signed.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30

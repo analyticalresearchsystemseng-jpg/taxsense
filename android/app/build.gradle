@@ -3,14 +3,6 @@ apply plugin: 'com.android.application'
 android {
     namespace = "uk.co.taxsense.app"
     compileSdk = rootProject.ext.compileSdkVersion
-
-    signingConfigs {
-        debug {
-            // Use the default debug keystore (auto-created by AGP)
-            // This ensures the debug APK is properly signed for sideloading
-        }
-    }
-
     defaultConfig {
         applicationId "uk.co.taxsense.app"
         minSdkVersion rootProject.ext.minSdkVersion

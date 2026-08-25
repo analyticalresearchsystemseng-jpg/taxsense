@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "postbuild": "node scripts/fix-ios-signing.cjs",
-    "capacitor:sync:after": "node scripts/fix-ios-signing.cjs && cd ios/App && pod install",
+    "capacitor:sync:after": "node scripts/fix-ios-signing.cjs && (command -v pod >/dev/null 2>&1 && (cd ios/App && pod install) || true)",
     "lint": "eslint .",
     "preview": "vite preview"
   },

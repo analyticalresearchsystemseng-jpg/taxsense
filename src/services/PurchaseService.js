@@ -64,40 +64,8 @@ class PurchaseService {
     }
 
     async checkSubscriptionStatus() {
-        if (this.mockMode) {
-            const mockTier = localStorage.getItem('taxsense_pro_mock_tier');
-            return mockTier ? mockTier : 'free';
-        }
-
-        // Primary: check customer info for logged-in user (identifyUser runs before this)
-        // RevenueCat auto-links purchases to the logged-in user, so getCustomerInfo
-        // is sufficient — no need for restorePurchases on every launch.
-        for (let attempt = 0; attempt < 2; attempt++) {
-            try {
-                const customerInfo = await Purchases.getCustomerInfo();
-                const entitlement = customerInfo.entitlements.active['pro_access'];
-                if (entitlement) {
-                    const tier = this.detectTierFromEntitlement(entitlement);
-                    localStorage.setItem('taxsense_cached_tier', tier);
-                    return tier;
-                }
-                // No active entitlement found from server — break to fallbacks
-                break;
-            } catch (infoErr) {
-                console.warn(`[RevenueCat] Customer info check failed (attempt ${attempt + 1}):`, infoErr.message || infoErr);
-                // On first failure wait briefly then retry (SDK may still be syncing)
-                if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
-            }
-        }
-
-        // Fallback: check locally cached tier (survives app updates via iOS sandbox)
-        const cachedTier = localStorage.getItem('taxsense_cached_tier');
-        if (cachedTier && cachedTier !== 'free') {
-            console.log('[RevenueCat] Using cached tier:', cachedTier);
-            return cachedTier;
-        }
-
-        return 'free';
+        // Premium unlocked for sideloaded builds — bypass RevenueCat
+        return 'annual';
     }
 
     async purchasePro(planIndex = 0) {

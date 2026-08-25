@@ -167,7 +167,7 @@ export default function SelfEmployedTab({
 
     const openAddModal = (type) => {
         // subscription limits (trial mode for Free and Annual)
-        if (subscriptionTier !== 'monthly') {
+        if (subscriptionTier === 'free') {
             const currentInvoices = months.reduce((acc, m) => acc + (m.invoices?.length || 0), 0);
             const currentExpenses = months.reduce((acc, m) => acc + (m.expenses?.length || 0), 0);
             const currentAssets = assets.length;
@@ -595,7 +595,7 @@ export default function SelfEmployedTab({
 
             {/* --- POWER PACK TAB --- */}
             {subTab === 'powerpack' && (
-                subscriptionTier !== 'monthly' ? (
+                subscriptionTier === 'free' ? (
                     <div className="glass-card" style={{ textAlign: 'center', padding: '4rem 2rem', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid var(--primary)' }}>
                         <div style={{ background: 'var(--primary)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'white', boxShadow: '0 0 30px rgba(99, 102, 241, 0.4)' }}>
                             <ShieldCheck size={32} />

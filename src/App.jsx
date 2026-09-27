@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffe
 import { Plus, Trash2, Calculator, TrendingUp, Download, Info, AlertTriangle, Calendar, Clock, Receipt, Settings, RefreshCw, LayoutDashboard, CheckSquare, Square, ExternalLink, BarChart3, PieChart as PieChartIcon, ShieldCheck, Printer, Landmark, Copy, Briefcase, BookOpen, Sun, Moon, Bot, Smartphone, Car, Gauge, ClipboardList, X, ChevronRight, ChevronDown, CloudUpload, CloudDownload, AlertCircle, Wallet } from 'lucide-react';
 import { calculateTax, calculateCumulativeTax, projectAnnual, getTaxTrapSummary, calculateOvertime, calculateStandardTaxCode } from './logic/TaxCalculator';
 import { getProfiles, saveProfiles, markFirebaseMigrationComplete, exportBackup, importBackup, getLastBackupDate, shouldShowBackupReminder, dismissBackupReminder } from './services/LocalStorageService';
-import PurchaseService from './services/PurchaseService';
+import PurchaseService, { getAnonymousUserId } from './services/PurchaseService';
 import { Share } from '@capacitor/share';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell, PieChart, Pie, LineChart, Line } from 'recharts';
 import SelfEmployedTab from './SelfEmployedTab';
@@ -883,11 +883,45 @@ function App() {
 
 
 
+  const saveTimeoutRef = useRef(null);
+
+  const flushSaveCurrentYear = (overrideProfiles) => {
+    if (!isLoaded) return null;
+    const activeData = {
+      taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent,
+      taxYear, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months,
+      workMode, seData, hasCompletedTour, leaseConfig, mileageLogs, budgetConfig
+    };
+
+    const dataString = JSON.stringify(activeData);
+    lastSavedHashRef.current = dataString;
+
+    const baseProf = overrideProfiles || profiles;
+    const updatedProfiles = {
+      ...baseProf,
+      [taxYear]: activeData
+    };
+
+    localStorage.setItem('taxSenseData_v2_Profiles', JSON.stringify(updatedProfiles));
+    localStorage.setItem('taxSense_activeYear', taxYear);
+
+    saveProfiles(updatedProfiles, 'local-user').catch(e => {
+      console.error("[LOCAL_SAVE_ERROR]", e);
+    });
+
+    setProfiles(updatedProfiles);
+    return updatedProfiles;
+  };
+
   // Cloud save - debounced on any data change
   useEffect(() => {
-  if (!isLoaded) return;
+    if (!isLoaded) return;
 
-    const timeoutIdx = setTimeout(async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
       const activeData = {
         taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent,
         taxYear, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months,
@@ -897,43 +931,26 @@ function App() {
       // Simple hash check to prevent redundant saves (and loops)
       const dataString = JSON.stringify(activeData);
       if (dataString === lastSavedHashRef.current) return;
-      lastSavedHashRef.current = dataString;
-
-      console.log(`[CLOUD_SAVE] Saving data for ${taxYear}...`);
-      
-      // Update local storage first (immediate feedback/backup)
-      localStorage.setItem('taxSenseData_v2_Profiles', JSON.stringify({
-        ...profiles,
-        [taxYear]: activeData
-      }));
-      localStorage.setItem('taxSense_activeYear', taxYear);
-
-      // Save to local storage
-      try {
-        const currentProfiles = await getProfiles('local-user');
-        const updatedProfiles = {
-          ...currentProfiles,
-          [taxYear]: activeData
-        };
-        await saveProfiles(updatedProfiles, 'local-user');
-        
-        // Also save active tax year
-        localStorage.setItem('taxSense_activeYear', taxYear);
-        
-        // Update profiles state without triggering loop
-        setProfiles(prev => ({ ...prev, [taxYear]: activeData }));
-      } catch (e) {
-        console.error("[LOCAL_SAVE_ERROR]", e);
-      }
+      flushSaveCurrentYear();
     }, 2000); // 2s debounce for stability
 
-    return () => clearTimeout(timeoutIdx);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [taxCode, baseSalary, contractedHours, pensionPercent, pensionType, holidaySupplementPercent, studentLoanPlans, childBenefitCount, baseEnhancements, baseSacrifices, months, workMode, seData, hasCompletedTour, isLoaded, taxYear, leaseConfig, mileageLogs, budgetConfig, profiles]);
 
-  // Switch Year Handler
+  // Switch Year Handler - flushes pending autosave before switching (P1-6)
   const handleYearSwitch = (newYear) => {
+    if (newYear === taxYear) return;
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    const savedProfiles = flushSaveCurrentYear() || profiles;
     setTaxYear(newYear);
-    const activeProf = profiles[newYear];
+    const activeProf = savedProfiles[newYear];
     applyProfile(activeProf || {});
     setSandboxMode(false);
   };
@@ -965,8 +982,9 @@ function App() {
   useEffect(() => {
     const initPurchases = async () => {
       await PurchaseService.initialize();
-      // Identify user FIRST, then check subscription — ensures purchase is found for the right user
-      await PurchaseService.identifyUser('local-user');
+      // Identify user FIRST, then check subscription (P1-5: anonymous per-installation UUID)
+      const anonUserId = getAnonymousUserId();
+      await PurchaseService.identifyUser(anonUserId);
       const status = await PurchaseService.checkSubscriptionStatus();
       setSubscriptionTier(status);
     };
@@ -1010,7 +1028,7 @@ function App() {
   // 1. Recurring Base for future projection
   const futureBaseData = useMemo(() => {
     const monthlyBaseSalary = (sandboxMode && sandboxSalary !== null ? sandboxSalary : baseSalary) / 12;
-    const baseEnhancementMonthly = baseEnhancements.reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
+    const baseEnhancementMonthly = baseEnhancements.filter(e => e.enhancementType !== 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
     const baseBikMonthly = baseEnhancements.filter(e => e.enhancementType === 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
     const grossBaseSacrificeMonthly = baseSacrifices.filter(d => d.type !== 'net_sacrifice').reduce((s, d) => s + getMonthlyValue(d.amount, d.frequency), 0) + (sandboxMode && sandboxSacrifice !== null ? sandboxSacrifice / 12 : 0);
     const netBaseSacrificeMonthly = baseSacrifices.filter(d => d.type === 'net_sacrifice').reduce((s, d) => s + getMonthlyValue(d.amount, d.frequency), 0);
@@ -1044,7 +1062,7 @@ function App() {
 
       const varGrossIncome = (m.income || []).reduce((s, i) => s + (Number(i.amount) || 0), 0) + (m.deductions || []).filter(d => d.type === 'income').reduce((s, d) => s + (Number(d.amount) || 0), 0) + holidaySupplementAmount;
 
-      const baseEnhancementMonthlyTotal = (baseEnhancements || []).reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
+      const baseEnhancementMonthlyTotal = (baseEnhancements || []).filter(e => e.enhancementType !== 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
       const baseBikMonthlyTotal = (baseEnhancements || []).filter(e => e.enhancementType === 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
       const totalMonthlyGrossForPension = monthlyBaseSalary + (baseEnhancements || []).filter(e => e.includeInPension && e.enhancementType !== 'bik').reduce((s, e) => s + getMonthlyValue(e.amount, e.frequency), 0);
       const pension = totalMonthlyGrossForPension * ((sandboxMode && sandboxPension !== null ? sandboxPension : pensionPercent) / 100);
@@ -1334,30 +1352,15 @@ function App() {
 
   const monthlyBik = currentMonthFull.bik || 0;
   const monthlyTaxableIncome = (monthlyGross + monthlyBik) - monthlyPension - monthlyGrossSacrifice;
-  // Tax is calculated on FULL gross (including BiK) — HMRC taxes the benefit
+  // Tax is calculated on FULL taxable gross (cash gross + BiK) — HMRC taxes the benefit
   const monthlyResultsAnnualized = calculateTax(
-    monthlyGross * 12,
+    (monthlyGross + monthlyBik) * 12,
     monthlyPension * 12,
     monthlyGrossSacrifice * 12,
     taxCode,
     monthlyNetSacrifice * 12,
-    { taxYear, studentLoanPlans, childBenefitCount, pensionIsSS: pensionType === 'salary_sacrifice' }
+    { taxYear, studentLoanPlans, childBenefitCount, pensionIsSS: pensionType === 'salary_sacrifice', annualBik: monthlyBik * 12 }
   );
-  // For net pay: employee never receives BiK money, so take-home = (gross - BiK) minus tax
-  // Tax is still on full gross, so we need (gross - BiK) - tax - NI - etc
-  // Which equals: takeHome_on_full_gross - BiK
-  // But takeHome_on_full_gross includes BiK minus extra_tax, so:
-  // net = (takeHome_full_gross/12) - monthlyBik is WRONG (over-subtracts)
-  // Correct: net = ((gross-BiK)*12 - tax - NI - etc) / 12 + taxFree
-  // Simplest: recalculate tax on (gross-BiK) for take-home, display tax from full gross
-  const monthlyResultsMinusBik = monthlyBik > 0 ? calculateTax(
-    (monthlyGross - monthlyBik) * 12,
-    monthlyPension * 12,
-    monthlyGrossSacrifice * 12,
-    taxCode,
-    monthlyNetSacrifice * 12,
-    { taxYear, studentLoanPlans, childBenefitCount, pensionIsSS: pensionType === 'salary_sacrifice' }
-  ) : null;
   // v15.0: Cumulative PAYE Tax Calculation for Monthly Summary
   // Uses proper UK cumulative tax: tax on YTD income minus tax already paid
   const cumulativeTax = (() => {
@@ -1368,7 +1371,7 @@ function App() {
       const monthSS = m.deductionItems.filter(d => d.type === 'salary_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0) + m.rawMonthsActual.deductions.filter(d => d.type === 'salary_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0);
       const monthNet = m.deductionItems.filter(d => d.type === 'net_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0) + m.rawMonthsActual.deductions.filter(d => d.type === 'net_sacrifice').reduce((s, item) => s + Number(item.amount || 0), 0);
       return {
-        gross: m.gross + (m.bik || 0), // BiK is a separate taxable benefit added on top of gross
+        gross: m.gross, // P0-3: Cash gross only — do NOT add BIK as cash
         pension: m.pension,
         salarySacrifice: monthSS,
         netDeductions: monthNet,
@@ -1394,10 +1397,7 @@ function App() {
   // Use cumulative net pay when available (v15.0: proper UK cumulative PAYE)
   const totalMonthlyNet = cumulativeTax
     ? cumulativeTax.currentMonth.netPay
-    : (monthlyBik > 0
-      ? monthlyResultsMinusBik.annualTakeHome / 12
-      : monthlyResultsAnnualized.annualTakeHome / 12
-    ) + currentMonthFull.taxFree;
+    : (monthlyResultsAnnualized.annualTakeHome / 12) + currentMonthFull.taxFree;
   // Legacy reference (same as totalMonthlyNet when no cumulative data)
   const totalMonthlyNetCumulative = totalMonthlyNet;
 
@@ -2806,6 +2806,39 @@ function App() {
                 </div>
               </div>
 
+              {/* Privacy Policy & Legal Section (P0-7) */}
+              <div className="settings-box" style={{ marginTop: '2rem' }}>
+                <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ShieldCheck size={18} color="var(--primary)" /> Privacy & Legal
+                </h3>
+                <p style={{ fontSize: '0.85rem', opacity: 0.8, marginBottom: '1rem', lineHeight: 1.5 }}>
+                  TaxSense is built local-first. Your financial data, calculations, and receipt photos are stored strictly on your device.
+                </p>
+                <a
+                  href="/privacy.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem'
+                  }}
+                  onClick={(e) => {
+                    if (window.Capacitor?.isNativePlatform?.()) {
+                      e.preventDefault();
+                      window.open('/privacy.html', '_blank');
+                    }
+                  }}
+                >
+                  <ExternalLink size={16} />
+                  <span>View Privacy Policy</span>
+                </a>
+              </div>
 
             </div>
           </div>
@@ -2855,6 +2888,20 @@ function App() {
             <ShieldCheck size={14} color="var(--success)" /> UK Tax Year {taxYear} - Professional Grade
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--input-bg)', padding: '0.5rem 1rem', borderRadius: '2rem', border: '1px solid var(--glass-border)' }}>
+            <a 
+              href="/privacy.html" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              onClick={(e) => {
+                if (window.Capacitor?.isNativePlatform?.()) {
+                  e.preventDefault();
+                  window.open('/privacy.html', '_blank');
+                }
+              }}
+            >
+              <ExternalLink size={12} /> Privacy Policy
+            </a>
           </div>
         </footer>
       </main>

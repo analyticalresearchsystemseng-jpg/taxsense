@@ -21,9 +21,31 @@ const SE_CONSTANTS = {
         tradingAllowance: 1000,
         vatThreshold: 90000,
         paymentsOnAccountThreshold: 1000,
-        slPlan1Threshold: 25725,             // 25/26 threshold
-        slPlan2Threshold: 28310,             // 25/26 threshold
-        slPlan4Threshold: 32345,             // 25/26 threshold
+        slPlan1Threshold: 26065,             // 25/26 official threshold
+        slPlan2Threshold: 28470,             // 25/26 official threshold
+        slPlan4Threshold: 32745,             // 25/26 official threshold
+        slPlan5Threshold: 25000,
+        slPglThreshold: 21000,
+        slRate: 0.09,
+        slPglRate: 0.06
+    },
+    '2026/27': {
+        class2WeeklyRate: 0,                   // Abolished
+        class2SmallProfitsThreshold: 6725,
+        class2LowerProfitsThreshold: 12570,
+        class4MainRate: 0.06,
+        class4UpperRate: 0.02,
+        class4LowerLimit: 12570,
+        class4UpperLimit: 50270,
+        mileageRate1: 0.45,
+        mileageRate2: 0.25,
+        mileageCutoff: 10000,
+        tradingAllowance: 1000,
+        vatThreshold: 90000,
+        paymentsOnAccountThreshold: 1000,
+        slPlan1Threshold: 26900,             // 26/27 official threshold
+        slPlan2Threshold: 29385,             // 26/27 official threshold
+        slPlan4Threshold: 33795,             // 26/27 official threshold
         slPlan5Threshold: 25000,
         slPglThreshold: 21000,
         slRate: 0.09,
@@ -139,17 +161,18 @@ export const calculateSEProfit = (params) => {
  * Calculate SE Income Tax with SIPP/Gift Aid band extension
  */
 export const calculateSEIncomeTax = (params) => {
-    const { payeANI, seProfit, sipp = 0, giftAid = 0, taxYear = '2025/26' } = params;
-    if (seProfit <= 0) return 0;
+    const { payeANI = 0, seProfit = 0, sipp = 0, giftAid = 0, taxYear = '2025/26', payeIncomeTaxPaid = 0 } = params;
+    if (seProfit <= 0 && payeANI <= 0) return 0;
 
     const BANDS = {
+        '2026/27': { paMax: 12570, basicRateLimit: 37700, paThreshold: 100000 },
         '2025/26': { paMax: 12570, basicRateLimit: 37700, paThreshold: 100000 },
         '2024/25': { paMax: 12570, basicRateLimit: 37700, paThreshold: 100000 },
     };
     const cfg = BANDS[taxYear] || BANDS['2025/26'];
     const higherRateLimit = 125140;
 
-    // SIPP and Gift Aid (Grossed up: devide by 0.8)
+    // SIPP and Gift Aid (Grossed up: divide by 0.8)
     const grossedUpSipp = sipp / 0.8;
     const grossedUpGiftAid = giftAid / 0.8;
     const totalExtension = grossedUpSipp + grossedUpGiftAid;
@@ -172,7 +195,8 @@ export const calculateSEIncomeTax = (params) => {
         tax += basic * 0.20;
         taxable -= basic;
 
-        const higher = Math.min(taxable, higherRateLimit + totalExtension - cfg.paMax - extendedBasicRateLimit);
+        // P0-1: Correct higher rate band width is higherRateLimit - basicRateLimit (£87,440)
+        const higher = Math.min(taxable, higherRateLimit + totalExtension - extendedBasicRateLimit);
         tax += higher * 0.40;
         taxable -= higher;
 
@@ -180,10 +204,15 @@ export const calculateSEIncomeTax = (params) => {
         return tax;
     };
 
-    const taxOnCombined = calcTax(payeANI + seProfit);
-    const taxOnPAYEOnly = calcTax(payeANI);
+    const totalStatutoryTax = calcTax(payeANI + seProfit);
 
-    return round(Math.max(0, taxOnCombined - taxOnPAYEOnly));
+    // P1-1: Compute total statutory tax liability on combined income, then subtract payeIncomeTaxPaid
+    if (payeIncomeTaxPaid > 0) {
+        return round(Math.max(0, totalStatutoryTax - payeIncomeTaxPaid));
+    }
+
+    const taxOnPAYEOnly = payeANI > 0 ? calcTax(payeANI) : 0;
+    return round(Math.max(0, totalStatutoryTax - taxOnPAYEOnly));
 };
 
 /**
@@ -228,7 +257,7 @@ export const calculateSelfAssessment = (params) => {
 
     const class2 = calculateClass2NI(seProfit, taxYear);
     const class4 = calculateClass4NI(seProfit, taxYear);
-    const seIncomeTax = calculateSEIncomeTax({ payeANI, seProfit, taxCode, sipp, giftAid, taxYear });
+    const seIncomeTax = calculateSEIncomeTax({ payeANI, seProfit, taxCode, sipp, giftAid, taxYear, payeIncomeTaxPaid });
 
     // Student Loan through SA
     const totalIncomeForSL = payeANI + seProfit;
@@ -239,8 +268,10 @@ export const calculateSelfAssessment = (params) => {
 
     const totalTaxLiability = totalSABill + payeIncomeTaxPaid;
     const fractionAtSource = totalTaxLiability > 0 ? payeIncomeTaxPaid / totalTaxLiability : 1;
-    const poaRequired = totalSABill > cfg.paymentsOnAccountThreshold && fractionAtSource < 0.8;
-    const poaAmount = poaRequired ? round(totalSABill / 2) : 0;
+    // P1-1: Payments on Account based on (seIncomeTax + class4)/2, excluding student loans
+    const poaBase = seIncomeTax + class4;
+    const poaRequired = poaBase > cfg.paymentsOnAccountThreshold && fractionAtSource < 0.8;
+    const poaAmount = poaRequired ? round(poaBase / 2) : 0;
 
     const taxYearStart = parseInt(taxYear.split('/')[0]);
     return {

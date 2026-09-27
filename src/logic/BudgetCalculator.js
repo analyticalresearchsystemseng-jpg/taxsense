@@ -43,7 +43,8 @@ export function calculateMonthlyBudget(budgetConfig) {
   
   // Budgeted outgoings
   items.forEach(item => {
-    const monthly = item.frequency === 'annual' ? (item.amount || 0) / 12 : (item.amount || 0);
+    const amount = Number(item.amount) || 0;
+    const monthly = item.frequency === 'annual' ? amount / 12 : amount;
     byCategory[item.category] = (byCategory[item.category] || 0) + monthly;
     totalMonthly += monthly;
   });

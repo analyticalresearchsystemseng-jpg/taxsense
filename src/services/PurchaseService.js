@@ -1,26 +1,57 @@
 import { Purchases, LOG_LEVEL } from '@revenuecat/purchases-capacitor';
 
-const REVENUECAT_API_KEY = 'appl_QCUkEjYUzWxEVwEMWJyneKlJTfj'; 
-const USE_REAL_PAYMENTS = true; // Toggle this to true for final App Store submission
+// ============================================================================
+// SECURITY & CONFIGURATION NOTE:
+// API keys below are public SDK keys used for client-side RevenueCat SDK initialization.
+// In production builds, consider passing these via Vite environment variables
+// (e.g. import.meta.env.VITE_REVENUECAT_IOS_KEY / VITE_REVENUECAT_ANDROID_KEY).
+// Never commit secret / server API keys into client code.
+// ============================================================================
+const IOS_REVENUECAT_KEY = 'appl_QCUkEjYUzWxEVwEMWJyneKlJTfj';
+export const ANDROID_REVENUECAT_KEY = 'goog_PLACEHOLDER_KEY_REPLACE_ME'; // Google Play RevenueCat key placeholder
+
+const USE_REAL_PAYMENTS = true;
+
+/**
+ * Returns or generates a per-installation anonymous UUID persisted in localStorage (P1-5).
+ */
+export function getAnonymousUserId() {
+    const STORAGE_KEY = 'taxsense_anonymous_user_id';
+    let id = localStorage.getItem(STORAGE_KEY);
+    if (!id) {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            id = crypto.randomUUID();
+        } else {
+            id = 'anon-' + Date.now() + '-' + Math.random().toString(36).substring(2, 15);
+        }
+        localStorage.setItem(STORAGE_KEY, id);
+    }
+    return id;
+}
 
 class PurchaseService {
     constructor() {
         this.isInitialized = false;
-        this.mockMode = false; // Real payments - mock mode disabled
+        this.mockMode = false;
     }
 
     async initialize() {
         if (this.isInitialized) return;
 
         try {
-            // Check if we are running on a real device and have a real key
-            if (USE_REAL_PAYMENTS && REVENUECAT_API_KEY !== 'REPLACE_WITH_YOUR_KEY' && (window.Capacitor?.getPlatform() === 'ios' || window.Capacitor?.getPlatform() === 'android')) {
+            const platform = window.Capacitor?.getPlatform ? window.Capacitor.getPlatform() : 'web';
+            const apiKey = platform === 'ios' ? IOS_REVENUECAT_KEY : platform === 'android' ? ANDROID_REVENUECAT_KEY : null;
+
+            // Check if running on real platform with valid non-placeholder key
+            const isValidKey = apiKey && apiKey !== 'REPLACE_WITH_YOUR_KEY' && !apiKey.includes('PLACEHOLDER');
+
+            if (USE_REAL_PAYMENTS && isValidKey && (platform === 'ios' || platform === 'android')) {
                 await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
-                await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+                await Purchases.configure({ apiKey });
                 this.mockMode = false;
-                console.log('RevenueCat initialized successfully (REAL MODE)');
+                console.log(`RevenueCat initialized successfully for ${platform} (REAL MODE)`);
             } else {
-                console.log(`RevenueCat: Running in Mock Mode (${USE_REAL_PAYMENTS ? 'Web/Missing Key' : 'FORCED'})`);
+                console.log(`RevenueCat: Running in Mock Mode (platform: ${platform}, key: ${apiKey ? (isValidKey ? 'valid' : 'placeholder') : 'none'}, forced: ${!USE_REAL_PAYMENTS})`);
                 this.mockMode = true;
             }
             this.isInitialized = true;
@@ -32,8 +63,9 @@ class PurchaseService {
     async identifyUser(userId) {
         if (!this.isInitialized || this.mockMode) return;
         try {
-            await Purchases.logIn({ appUserID: userId });
-            console.log('RevenueCat: Identified user:', userId);
+            const effectiveId = userId || getAnonymousUserId();
+            await Purchases.logIn({ appUserID: effectiveId });
+            console.log('RevenueCat: Identified user:', effectiveId);
         } catch (e) {
             console.error('RevenueCat: Login failed:', e);
         }
@@ -64,8 +96,26 @@ class PurchaseService {
     }
 
     async checkSubscriptionStatus() {
-        // Premium unlocked for sideloaded builds — bypass RevenueCat
-        return 'annual';
+        if (this.mockMode) {
+            // In mock mode, check local storage for the specific tier
+            const mockTier = localStorage.getItem('taxsense_pro_mock_tier');
+            return mockTier ? mockTier : 'free';
+        }
+
+        try {
+            const customerInfo = await Purchases.getCustomerInfo();
+            const entitlement = customerInfo.entitlements?.active?.['pro_access'];
+            if (entitlement) {
+                const tier = this.detectTierFromEntitlement(entitlement);
+                localStorage.setItem('taxsense_cached_tier', tier);
+                return tier;
+            }
+            return 'free';
+        } catch (e) {
+            console.error('Failed to fetch customer info:', e);
+            const cachedTier = localStorage.getItem('taxsense_cached_tier');
+            return cachedTier || 'free';
+        }
     }
 
     async purchasePro(planIndex = 0) {
@@ -73,7 +123,6 @@ class PurchaseService {
             // Simulate a successful purchase for testing
             return new Promise((resolve) => {
                 setTimeout(() => {
-                    // Store the specific tier so checkSubscriptionStatus works
                     const tier = planIndex === 0 ? 'monthly' : 'annual';
                     localStorage.setItem('taxsense_pro_mock_tier', tier);
                     resolve(tier);
@@ -110,8 +159,9 @@ class PurchaseService {
             
             console.log('[Purchase] Purchase result:', JSON.stringify(purchaseResult, null, 2));
             
-            if (purchaseResult.customerInfo.entitlements.active['pro_access']) {
-                const tier = planIndex === 0 ? 'monthly' : 'annual';
+            const entitlement = purchaseResult.customerInfo?.entitlements?.active?.['pro_access'];
+            if (entitlement) {
+                const tier = this.detectTierFromEntitlement(entitlement) || (planIndex === 0 ? 'monthly' : 'annual');
                 localStorage.setItem('taxsense_cached_tier', tier);
                 return tier;
             }
@@ -133,7 +183,7 @@ class PurchaseService {
 
         try {
             const customerInfo = await Purchases.restorePurchases();
-            const entitlement = customerInfo.entitlements.active['pro_access'];
+            const entitlement = customerInfo.entitlements?.active?.['pro_access'];
             if (entitlement) {
                 const tier = this.detectTierFromEntitlement(entitlement);
                 localStorage.setItem('taxsense_cached_tier', tier);
@@ -142,7 +192,6 @@ class PurchaseService {
             return 'free';
         } catch (e) {
             console.error('Restore failed:', e);
-            // Check cached tier as fallback
             const cachedTier = localStorage.getItem('taxsense_cached_tier');
             return cachedTier || 'free';
         }

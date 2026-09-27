@@ -218,14 +218,14 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
 
                 {/* === CLASS 2 & 4 NI === */}
                 <Section icon={<Calculator size={17} />} title="Class 2 & Class 4 NI" badge="SE">
-                    <p style={{color: '#cbd5e1'}}>As a sole trader you don't pay the usual Class 1 NI (that's for employees). Instead you pay two types via your Self Assessment return:</p>
+                    <p style={{color: '#cbd5e1'}}>As a sole trader you don't pay the usual Class 1 NI (that's for employees). Instead National Insurance is handled via your Self Assessment return:</p>
                     <Table rows={[
-                        ['Class 2 NI', '£3.45/week if profit > £12,570 (2025/26)'],
-                        ['Class 2 credits', 'Profit between £6,725-£12,570: no payment but NI credit given'],
+                        ['Class 2 NI (Abolished)', 'Mandatory payments abolished from April 2024 (£0/week)'],
+                        ['Class 2 credits', 'Profit > £6,725: you receive free NI credits toward State Pension without paying'],
                         ['Class 4 NI (main)', '6% on profit from £12,570 to £50,270'],
                         ['Class 4 NI (upper)', '2% on profit above £50,270'],
                     ]} />
-                    <Tip>Class 2 NI counts toward your State Pension entitlement — so it's worth paying even if your profit is low, as long as you're above the Small Profits Threshold.</Tip>
+                    <Tip>Mandatory Class 2 NI was abolished from 6 April 2024. If your profit is above the Small Profits Threshold (£6,725), you automatically receive qualifying NI credits toward your State Pension with nothing to pay.</Tip>
                 </Section>
 
                 {/* === PAYE + SE COMBINED === */}
@@ -235,7 +235,7 @@ export default function FullGuideModal({ onClose, taxYear, workMode }) {
                         <Table rows={[
                             ['Band stacking', 'Your PAYE salary fills tax bands first. SE profit is taxed at the next rate up.'],
                             ['Personal Allowance', 'Your employer already uses your full £12,570 allowance via PAYE — SE profit is often taxed from £0.'],
-                            ['NI', 'You pay Class 1 via payslip AND Class 2/4 on SE profit via SA — these are separate.'],
+                            ['NI', 'You pay Class 1 via payslip AND Class 4 on SE profit via SA — these are separate.'],
                             ['£100k trap', 'Combined income counts — £80k PAYE + £22k SE = £102k total, entering the 60% trap zone.'],
                             ['Student Loan', 'Repayments based on total income from both sources.'],
                         ]} />

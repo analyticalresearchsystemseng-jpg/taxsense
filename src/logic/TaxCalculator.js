@@ -47,27 +47,24 @@ const STUDENT_LOAN_PLANS = {
         'pgl': { threshold: 21000, rate: 0.06 }
     },
     '2025/26': {
-        'plan1': { threshold: 25725, rate: 0.09 },
-        'plan2': { threshold: 28310, rate: 0.09 },
-        'plan4': { threshold: 32345, rate: 0.09 },
+        'plan1': { threshold: 26065, rate: 0.09 },
+        'plan2': { threshold: 28470, rate: 0.09 },
+        'plan4': { threshold: 32745, rate: 0.09 },
         'plan5': { threshold: 25000, rate: 0.09 },
         'pgl': { threshold: 21000, rate: 0.06 }
     },
     '2026/27': {
-        'plan1': { threshold: 26350, rate: 0.09 }, // 26/27 estimated
-        'plan2': { threshold: 28950, rate: 0.09 }, // 26/27 estimated
-        'plan4': { threshold: 33050, rate: 0.09 }, // 26/27 estimated
+        'plan1': { threshold: 26900, rate: 0.09 },
+        'plan2': { threshold: 29385, rate: 0.09 },
+        'plan4': { threshold: 33795, rate: 0.09 },
         'plan5': { threshold: 25000, rate: 0.09 },
         'pgl': { threshold: 21000, rate: 0.06 }
     }
 };
 
 export const parseTaxCode = (code) => {
-    const cleanCode = code.toUpperCase().trim();
-    if (cleanCode === 'BR') return 0;
-    if (cleanCode === 'D0') return -999999;
-    if (cleanCode === 'D1') return -9999999;
-    if (cleanCode === 'NT') return 1000000;
+    const cleanCode = (code || '').toUpperCase().trim();
+    if (cleanCode === 'BR' || cleanCode === 'D0' || cleanCode === 'D1' || cleanCode === 'NT') return 0;
 
     const match = cleanCode.match(/(-?\d+)/);
     if (match) {
@@ -100,6 +97,7 @@ export const calculateStandardTaxCode = (ani) => {
 export const calculateTax = (annualGross, pensionContribution = 0, salarySacrifice = 0, taxCode = '1257L', netDeductions = 0, options = {}) => {
     const year = options.taxYear || '2025/26';
     const config = CONSTANTS[year] || CONSTANTS['2025/26'];
+    const cleanTaxCode = (taxCode || '').toUpperCase().trim();
 
     // Adjusted Net Income (ANI) for PA Taper & HICBC
     const ani = Math.max(0, annualGross - pensionContribution - salarySacrifice);
@@ -122,26 +120,38 @@ export const calculateTax = (annualGross, pensionContribution = 0, salarySacrifi
     let incomeTax = 0;
     let remainingTaxable = workingTaxable - personalAllowance;
 
-    if (remainingTaxable > 0) {
-        const basicRateBand = Math.min(remainingTaxable, config.basicRateLimit);
-        incomeTax += basicRateBand * 0.20;
-        remainingTaxable -= basicRateBand;
-
+    // Explicit branches for flat-rate / zero-rate tax codes (P0-2)
+    if (cleanTaxCode === 'NT') {
+        incomeTax = 0;
+    } else if (cleanTaxCode === 'D0') {
+        incomeTax = workingTaxable * 0.40;
+    } else if (cleanTaxCode === 'D1') {
+        incomeTax = workingTaxable * 0.45;
+    } else {
         if (remainingTaxable > 0) {
-            const higherRateBand = Math.min(remainingTaxable, config.higherRateLimit - (config.paMax + config.basicRateLimit));
-            incomeTax += higherRateBand * 0.40;
-            remainingTaxable -= higherRateBand;
+            const basicRateBand = Math.min(remainingTaxable, config.basicRateLimit);
+            incomeTax += basicRateBand * 0.20;
+            remainingTaxable -= basicRateBand;
 
             if (remainingTaxable > 0) {
-                incomeTax += remainingTaxable * 0.45;
+                // P0-1: Correct higher rate band width is higherRateLimit - basicRateLimit (£87,440)
+                const higherRateBand = Math.min(remainingTaxable, config.higherRateLimit - config.basicRateLimit);
+                incomeTax += higherRateBand * 0.40;
+                remainingTaxable -= higherRateBand;
+
+                if (remainingTaxable > 0) {
+                    incomeTax += remainingTaxable * 0.45;
+                }
             }
         }
     }
 
-    // National Insurance - calculated on gross minus salary sacrifice (and pension if SS scheme)
+    // National Insurance - calculated on cash gross minus salary sacrifice (and pension if SS scheme)
+    // Non-cash BIK is not subject to employee Class 1 NI
     let ni = 0;
+    const annualBik = options.annualBik || options.bik || 0;
     const pensionIsSS = options.pensionIsSS || false;
-    const niableGross = Math.max(0, annualGross - salarySacrifice - (pensionIsSS ? pensionContribution : 0));
+    const niableGross = Math.max(0, annualGross - annualBik - salarySacrifice - (pensionIsSS ? pensionContribution : 0));
     if (niableGross > config.niThreshold) {
         const mainBand = Math.min(niableGross, config.niUpperLimit) - config.niThreshold;
         ni += mainBand * config.niMainRate;
@@ -150,20 +160,36 @@ export const calculateTax = (annualGross, pensionContribution = 0, salarySacrifi
         }
     }
 
-
-    // Student Loans
+    // Student Loans (P1-3 & P1-4)
     let studentLoan = 0;
     if (options.studentLoanPlans && options.studentLoanPlans.length > 0) {
-        const grossForSL = annualGross; // SL is calculated on gross after pension usually? Depends on pension type. Using Gross for simplicity as per common HMRC tools.
+        // P1-3: grossForSL based on NI-able earnings (deduct salary sacrifice)
+        const grossForSL = niableGross;
         const taxYear = options.taxYear || '2025/26';
         const yearSLConfig = STUDENT_LOAN_PLANS[taxYear] || STUDENT_LOAN_PLANS['2025/26'];
 
-        options.studentLoanPlans.forEach(planKey => {
-            const plan = yearSLConfig[planKey];
-            if (plan && grossForSL > plan.threshold) {
-                studentLoan += (grossForSL - plan.threshold) * plan.rate;
+        // P1-4: If multiple undergraduate plans, apply 9% once across the lowest threshold
+        const undergradPlans = options.studentLoanPlans.filter(p => p !== 'pgl');
+        const ugThresholds = undergradPlans
+            .map(p => yearSLConfig[p]?.threshold)
+            .filter(t => typeof t === 'number');
+
+        if (ugThresholds.length > 0) {
+            const minThreshold = Math.min(...ugThresholds);
+            if (grossForSL > minThreshold) {
+                studentLoan += (grossForSL - minThreshold) * 0.09;
             }
-        });
+        }
+
+        // Postgraduate loan is calculated separately at 6%
+        if (options.studentLoanPlans.includes('pgl')) {
+            const pglConfig = yearSLConfig['pgl'];
+            const pglThreshold = pglConfig?.threshold || 21000;
+            const pglRate = pglConfig?.rate || 0.06;
+            if (grossForSL > pglThreshold) {
+                studentLoan += (grossForSL - pglThreshold) * pglRate;
+            }
+        }
     }
 
     // HICBC (High Income Child Benefit Charge)
@@ -175,12 +201,14 @@ export const calculateTax = (annualGross, pensionContribution = 0, salarySacrifi
 
         // Charge is 1% for every £100 over £60k. Reaches 100% at £80k.
         const excess = ani - 60000;
-        const percentage = Math.min(100, Math.floor(excess / 200)); // v14 logic: 24/25 rule is 1% per £200 over 60k? Actually it changed to 60-80k.
-        // Rule: 1% for every £200. Reaches 100% at £80,000.
+        const percentage = Math.min(100, Math.floor(excess / 200));
         hicbc = annualBenefit * (percentage / 100);
     }
 
     const totalDeductions = incomeTax + ni + studentLoan + hicbc + netDeductions;
+
+    // Take-home pay: BIK is non-cash and does not add to cash take-home
+    const cashGrossTakeHome = Math.max(0, ani - annualBik);
 
     return {
         gross: round(annualGross),
@@ -194,8 +222,8 @@ export const calculateTax = (annualGross, pensionContribution = 0, salarySacrifi
         salarySacrifice: round(salarySacrifice),
         netDeductions: round(netDeductions),
         totalTaxNI: round(incomeTax + ni),
-        annualTakeHome: round(ani - incomeTax - ni - studentLoan - hicbc - netDeductions),
-        monthlyTakeHome: round((ani - incomeTax - ni - studentLoan - hicbc - netDeductions) / 12)
+        annualTakeHome: round(cashGrossTakeHome - incomeTax - ni - studentLoan - hicbc - netDeductions),
+        monthlyTakeHome: round((cashGrossTakeHome - incomeTax - ni - studentLoan - hicbc - netDeductions) / 12)
     };
 };
 
@@ -251,9 +279,17 @@ export const calculateCumulativeTax = (months, taxCode, options = {}, taxYearMon
         const period = i + 1; // HMRC period number (1=April, 2=May, etc.)
         
         // Check for tax code override from this month onwards
-        const effectiveTaxCode = m.taxCodeOverride || taxCode;
-        const effectiveCodeNum = parseInt(effectiveTaxCode) || codeNum;
-        const effectivePA = effectiveCodeNum * 10;
+        const effectiveTaxCode = (m.taxCodeOverride || taxCode || '1257L').toUpperCase().trim();
+        let effectivePA = 0;
+        if (effectiveTaxCode !== 'BR' && effectiveTaxCode !== 'D0' && effectiveTaxCode !== 'D1' && effectiveTaxCode !== 'NT') {
+            const match = effectiveTaxCode.match(/(-?\d+)/);
+            if (match) {
+                let val = parseInt(match[1]) * 10;
+                effectivePA = effectiveTaxCode.startsWith('K') ? -Math.abs(val) : val;
+            } else {
+                effectivePA = 12570;
+            }
+        }
         
         // YTD running totals (cumulative)
         ytdGross += m.gross;
@@ -262,8 +298,8 @@ export const calculateCumulativeTax = (months, taxCode, options = {}, taxYearMon
         ytdNetDeductions += (m.netDeductions || 0);
         ytdBik += (m.bik || 0);
         
-        // Cumulative taxable income = YTD gross - YTD pension - YTD salary sacrifice
-        const cumTaxableIncome = ytdGross - ytdPension - ytdSacrifice;
+        // Cumulative taxable income = YTD gross + YTD BIK - YTD pension - YTD salary sacrifice (P0-3)
+        const cumTaxableIncome = ytdGross + ytdBik - ytdPension - ytdSacrifice;
         ytdTaxableIncome = cumTaxableIncome;
         
         // HMRC cumulative calculation
@@ -271,35 +307,40 @@ export const calculateCumulativeTax = (months, taxCode, options = {}, taxYearMon
         const cumBasicLimit = (basicRateLimit / periodsPerYear) * period;
         const cumHigherLimit = (higherRateLimit / periodsPerYear) * period;
         
-        // Use the personal allowance from the tax code directly.
-        // HMRC applies the tax code as-given during the year — the PA taper
-        // is reflected via a different tax code (e.g. K code), NOT by recalculating
-        // PA based on annualized YTD income mid-year.
         // Scale PA to period
         const cumFreePay = (effectivePA / periodsPerYear) * period;
         
-        // Cumulative taxable less free pay
-        const cumTaxableLessFree = Math.max(0, cumTaxableIncome - cumFreePay);
-        
         // Apply tax bands cumulatively
         let cumTax = 0;
-        let remaining = cumTaxableLessFree;
-        
-        // Basic rate (20%)
-        const basicBand = Math.min(remaining, cumBasicLimit);
-        cumTax += basicBand * 0.20;
-        remaining -= basicBand;
-        
-        // Higher rate (40%)
-        if (remaining > 0) {
-            const higherBand = Math.min(remaining, cumHigherLimit - cumBasicLimit);
-            cumTax += higherBand * 0.40;
-            remaining -= higherBand;
-        }
-        
-        // Additional rate (45%)
-        if (remaining > 0) {
-            cumTax += remaining * 0.45;
+        if (effectiveTaxCode === 'NT') {
+            cumTax = 0;
+        } else if (effectiveTaxCode === 'D0') {
+            cumTax = cumTaxableIncome * 0.40;
+        } else if (effectiveTaxCode === 'D1') {
+            cumTax = cumTaxableIncome * 0.45;
+        } else {
+            // Cumulative taxable less free pay
+            let remaining = Math.max(0, cumTaxableIncome - Math.max(0, cumFreePay));
+            if (effectivePA < 0) {
+                remaining += Math.abs(cumFreePay);
+            }
+            
+            // Basic rate (20%)
+            const basicBand = Math.min(remaining, cumBasicLimit);
+            cumTax += basicBand * 0.20;
+            remaining -= basicBand;
+            
+            // Higher rate (40%)
+            if (remaining > 0) {
+                const higherBand = Math.min(remaining, cumHigherLimit - cumBasicLimit);
+                cumTax += higherBand * 0.40;
+                remaining -= higherBand;
+            }
+            
+            // Additional rate (45%)
+            if (remaining > 0) {
+                cumTax += remaining * 0.45;
+            }
         }
         
         // Round cumulative tax to pennies

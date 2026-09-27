@@ -13,7 +13,8 @@ export function exportBudgetPDF(budgetConfig, netMonthlyPay) {
   const byCategory = {};
   let totalOutgoings = 0;
   items.forEach(item => {
-    const monthly = item.frequency === 'annual' ? (item.amount || 0) / 12 : (item.amount || 0);
+    const amount = Number(item.amount) || 0;
+    const monthly = item.frequency === 'annual' ? amount / 12 : amount;
     byCategory[item.category] = (byCategory[item.category] || 0) + monthly;
     totalOutgoings += monthly;
   });
@@ -93,7 +94,7 @@ export function exportBudgetPDF(budgetConfig, netMonthlyPay) {
   let categoryRendered = false;
   Object.entries(categoryItems).forEach(([cat, catItems]) => {
     const catLabel = CATEGORY_LABELS[cat] || cat;
-    const catTotal = catItems.reduce((s, i) => s + (i.frequency === 'annual' ? (i.amount || 0) / 12 : (i.amount || 0)), 0);
+    const catTotal = catItems.reduce((s, i) => s + (i.frequency === 'annual' ? (Number(i.amount) || 0) / 12 : (Number(i.amount) || 0)), 0);
 
     // Category header
     doc.setFontSize(10);
@@ -104,7 +105,8 @@ export function exportBudgetPDF(budgetConfig, netMonthlyPay) {
 
     // Items
     catItems.forEach(item => {
-      const monthly = item.frequency === 'annual' ? (item.amount || 0) / 12 : (item.amount || 0);
+      const amount = Number(item.amount) || 0;
+      const monthly = item.frequency === 'annual' ? amount / 12 : amount;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(60, 60, 60);

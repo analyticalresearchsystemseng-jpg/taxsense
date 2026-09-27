@@ -33,12 +33,15 @@
         <section>
             <h2>1. Information We Collect</h2>
             <p><strong>A. Local-First Data Strategy</strong><br>
-            As a privacy-focused application, TaxSense prioritizes keeping your financial data (salaries, tax codes, bonuses, and overtime shifts) securely stored <em>locally on your mobile device</em> by default. We do not require an internet connection to perform your tax estimations.</p>
+            As a privacy-focused application, TaxSense prioritizes keeping your financial data (salaries, tax codes, bonuses, and overtime shifts) securely stored <em>locally on your mobile device</em> (iOS and Android) by default. We do not require an internet connection to perform your tax estimations.</p>
             
-            <p><strong>B. Firebase Cloud Sync (Opt-In)</strong><br>
+            <p><strong>B. Camera and Receipt Storage</strong><br>
+            When you use your device camera or photo library to capture and attach receipts for expense tracking, all receipt photos and associated metadata are stored strictly locally on your device within sandboxed application storage. Receipt images are never uploaded to TaxSense servers or any third-party cloud services.</p>
+
+            <p><strong>C. Firebase Cloud Sync (Opt-In)</strong><br>
             If you choose to create an account and enable "Cloud Sync," we collect your email address and an encrypted payload containing your financial variables. This data is securely stored on Google Firebase servers solely for the purpose of synchronizing your data across multiple devices. You can delete this data at any time from within the app settings.</p>
 
-            <p><strong>C. Automated Diagnostic Data</strong><br>
+            <p><strong>D. Automated Diagnostic Data</strong><br>
             To monitor the health of the app and fix bugs, we may collect anonymous, non-identifying telemetry data (such as crash reports and device models). This data cannot be traced back to your individual account or identity.</p>
         </section>
 
@@ -57,7 +60,7 @@
             <p>We do not sell, rent, or trade your personal information to third parties. We use industry-leading third-party services exclusively to provide essential app functionality:</p>
             <ul>
                 <li><strong>Google Firebase:</strong> Used for secure user authentication (Email/Password or Anonymous) and optional encrypted Cloud Sync database storage.</li>
-                <li><strong>RevenueCat:</strong> Used to manage, validate, and restore your Apple App Store subscription purchases. RevenueCat receives anonymized identifiers directly linked to your Apple ID purchase history, but does not receive your tax or financial variables.</li>
+                <li><strong>RevenueCat:</strong> Used to manage, validate, and restore your subscription purchases across iOS (Apple App Store) and Android (Google Play Store). RevenueCat receives anonymized identifiers directly linked to your store purchase history, but does not receive your tax or financial variables.</li>
             </ul>
         </section>
 

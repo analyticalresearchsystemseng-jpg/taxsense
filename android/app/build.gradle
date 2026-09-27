@@ -1,8 +1,32 @@
 apply plugin: 'com.android.application'
 
+import java.util.Base64
+
+def envKeystoreB64 = System.getenv("ANDROID_KEYSTORE_B64")
+def envStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+def envKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+def envKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+
+def keystoreFile = null
+if (envKeystoreB64) {
+    keystoreFile = new File("${rootProject.buildDir}/taxsense-release.p12")
+    keystoreFile.parentFile.mkdirs()
+    keystoreFile.bytes = Base64.getDecoder().decode(envKeystoreB64)
+}
+
 android {
     namespace = "uk.co.taxsense.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    signingConfigs {
+        release {
+            if (keystoreFile != null) {
+                storeFile keystoreFile
+                storePassword envStorePassword
+                keyAlias envKeyAlias
+                keyPassword envKeyPassword
+            }
+        }
+    }
     defaultConfig {
         applicationId "uk.co.taxsense.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -23,6 +47,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }

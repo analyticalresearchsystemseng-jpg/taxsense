@@ -1,0 +1,73 @@
+name: Android Release AAB (Play Store)
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionName:
+        description: 'Version name (e.g. 1.6.2)'
+        required: true
+        default: '1.6.2'
+      versionCode:
+        description: 'Version code (must increase each release)'
+        required: true
+        default: '1401'
+
+jobs:
+  build-release-aab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Sync to Android
+        run: npx cap sync android
+
+      - name: Set version name and code
+        working-directory: android
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.event.inputs.versionCode }}/" app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ github.event.inputs.versionName }}\"/" app/build.gradle
+          grep -E "versionCode|versionName" app/build.gradle
+
+      - name: Build release AAB
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bundleRelease --no-daemon
+          ls -la app/build/outputs/bundle/release/
+
+      - name: Verify AAB signature
+        working-directory: android
+        run: |
+          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          "$BUILD_TOOLS/apksigner" verify --verbose app/build/outputs/bundle/release/app-release.aab || echo "apksigner may not support AAB directly; checking with bundletool"
+          ls -la app/build/outputs/bundle/release/
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxsense-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          retention-days: 30

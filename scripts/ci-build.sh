@@ -106,9 +106,13 @@ mkdir -p ~/.appstoreconnect/private_keys
 echo "$ASC_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
 chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
 
-if ! xcrun altool --upload-app --type ios --file ./build/export/App.ipa --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" > /tmp/upload.log 2>&1; then
+xcrun altool --upload-app --type ios --file ./build/export/App.ipa --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" > /tmp/upload.log 2>&1 || true
+
+if grep -q "ERROR:" /tmp/upload.log || ! grep -q "No errors uploading" /tmp/upload.log; then
     log "❌ UPLOAD FAILED"
-    tail -30 /tmp/upload.log >> "$SUMMARY"
+    cat /tmp/upload.log >> "$SUMMARY"
+    echo "--- altool output ---"
+    cat /tmp/upload.log
     exit 1
 fi
 

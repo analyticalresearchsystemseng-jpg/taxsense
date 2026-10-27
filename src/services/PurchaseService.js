@@ -136,12 +136,14 @@ class PurchaseService {
             console.log('[Purchase] Offerings result:', JSON.stringify(offerings, null, 2));
             
             if (!offerings.current) {
-                alert('DEBUG: No current offering found in RevenueCat. Please check your Offerings config and make sure one is set as "Current".');
+                console.warn('[Purchase] No current offering found in RevenueCat.');
+                alert('Subscription plans are currently unavailable. Please check your network connection and try again.');
                 return 'free';
             }
             
             if (!offerings.current.availablePackages || offerings.current.availablePackages.length === 0) {
-                alert('DEBUG: Offering found but no packages available. Check that products are linked to packages in RevenueCat.');
+                console.warn('[Purchase] Offering found but no packages available in RevenueCat.');
+                alert('No subscription packages are currently available. Please try again later.');
                 return 'free';
             }
             
@@ -169,7 +171,7 @@ class PurchaseService {
         } catch (e) {
             if (!e.userCancelled) {
                 console.error('[Purchase] FULL ERROR:', JSON.stringify(e, null, 2));
-                alert(`Purchase failed: ${e.message || e.code || JSON.stringify(e)}`);
+                alert(`Purchase could not be completed: ${e.message || 'Please try again.'}`);
             }
             return 'free';
         }

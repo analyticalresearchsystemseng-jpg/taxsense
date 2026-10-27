@@ -123,6 +123,8 @@ export const calculateTax = (annualGross, pensionContribution = 0, salarySacrifi
     // Explicit branches for flat-rate / zero-rate tax codes (P0-2)
     if (cleanTaxCode === 'NT') {
         incomeTax = 0;
+    } else if (cleanTaxCode === 'BR') {
+        incomeTax = workingTaxable * 0.20;
     } else if (cleanTaxCode === 'D0') {
         incomeTax = workingTaxable * 0.40;
     } else if (cleanTaxCode === 'D1') {
@@ -314,6 +316,8 @@ export const calculateCumulativeTax = (months, taxCode, options = {}, taxYearMon
         let cumTax = 0;
         if (effectiveTaxCode === 'NT') {
             cumTax = 0;
+        } else if (effectiveTaxCode === 'BR') {
+            cumTax = cumTaxableIncome * 0.20;
         } else if (effectiveTaxCode === 'D0') {
             cumTax = cumTaxableIncome * 0.40;
         } else if (effectiveTaxCode === 'D1') {

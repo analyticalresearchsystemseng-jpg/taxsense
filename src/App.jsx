@@ -3262,12 +3262,29 @@ function App() {
             >
               Unlock Ultimate Pro Now
             </button>
-            <button
-              style={{ background: 'none', border: 'none', color: 'var(--text-main)', opacity: 0.5, marginTop: '1rem', cursor: 'pointer', fontSize: '0.8rem' }}
-              onClick={() => setShowPremiumModal(false)}
-            >
-              Maybe Later
-            </button>
+            
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginTop: '1rem' }}>
+              <button
+                type="button"
+                onClick={handleRestore}
+                style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}
+              >
+                Restore Purchases
+              </button>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-main)', opacity: 0.6, cursor: 'pointer', fontSize: '0.85rem' }}
+                onClick={() => setShowPremiumModal(false)}
+              >
+                Maybe Later
+              </button>
+            </div>
+
+            <div style={{ marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: '0.75rem', opacity: 0.6, display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+              <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms of Use</a>
+              <span>•</span>
+              <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy Policy</a>
+            </div>
 
           </div>
         </div>

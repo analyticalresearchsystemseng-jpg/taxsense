@@ -33,7 +33,8 @@ content = re.sub(
 # Parses 1.3.9 → 1.3.10 (simple patch-level bump). Adjust as needed.
 ver_matches = re.findall(r'MARKETING_VERSION = ([0-9]+\.[0-9]+\.[0-9]+);', content)
 if ver_matches:
-    old_ver = max(ver_matches)  # lexicographic is fine for semver, use max
+    # Use numeric tuple sorting to handle versions like 1.6.10 correctly
+    old_ver = max(ver_matches, key=lambda v: [int(x) for x in v.split('.')])
     parts = old_ver.split('.')
     parts[-1] = str(int(parts[-1]) + 1)
     new_ver = '.'.join(parts)
